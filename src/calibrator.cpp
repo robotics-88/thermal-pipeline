@@ -47,13 +47,13 @@ void Calibrator::imageCallback(const sensor_msgs::Image::ConstPtr &image) {
     }
 
     cv_bridge::CvImagePtr cv_ptr; 
-    cv_ptr = cv_bridge::toCvCopy(image, sensor_msgs::image_encodings::TYPE_32FC1); 
+    cv_ptr = cv_bridge::toCvCopy(image, sensor_msgs::image_encodings::BGRA8); 
     cv::Mat mat_float;
     mat_float = cv_ptr->image;
     // Convert float to 
-    mat_float.convertTo(mat_float, CV_8UC1);
-    double min, max;
-    cv::minMaxLoc(mat_float, &min, &max);
+    // mat_float.convertTo(mat_float, CV_8UC1);
+    // double min, max;
+    // cv::minMaxLoc(mat_float, &min, &max);
     // std::cout << "min: " << min << ", max: " << max << std::endl;
 
     // Defining the world coordinates for 3D points
@@ -65,12 +65,12 @@ void Calibrator::imageCallback(const sensor_msgs::Image::ConstPtr &image) {
     }
     
     
-    cv::Mat frame;
+    cv::Mat frame = mat_float;
     // vector to store the pixel coordinates of detected checker board corners 
     std::vector<cv::Point2f> corner_pts;
     bool success;
     
-    cv::cvtColor(mat_float,frame,cv::COLOR_GRAY2BGR);
+    // cv::cvtColor(mat_float,frame,cv::COLOR_GRAY2BGR);
 
     // Finding checker board corners
     // If desired number of corners are found in the image then success = true  
@@ -97,7 +97,7 @@ void Calibrator::imageCallback(const sensor_msgs::Image::ConstPtr &image) {
     }
     cv_bridge::CvImage chessboard_align_msg;
     chessboard_align_msg.header   = image->header; // Same timestamp and tf frame as input image
-    chessboard_align_msg.encoding = sensor_msgs::image_encodings::BGR8;
+    chessboard_align_msg.encoding = sensor_msgs::image_encodings::TYPE_8UC4;
     chessboard_align_msg.image    = frame;
     image_chessboard_pub_.publish(chessboard_align_msg.toImageMsg());
 }
