@@ -41,6 +41,7 @@ class Calibrator {
         bool first_image_ = true;
 
         ros::Publisher image_chessboard_pub_;
+        ros::Publisher image_rect_pub_;
         ros::Publisher info_pub_;
 
         sensor_msgs::CameraInfo camera_info_;
@@ -55,6 +56,14 @@ class Calibrator {
 
         int img_rows_, img_cols_;
         int checkerboard_num_ = 7;
+        int calibrate_count_ = 0;
+        int calibrate_threshold_;
+        bool calibrated_ = false;
+
+        cv::Mat cameraMatrix, distCoeffs, optimal_mat;
+
+        void cornersFromTop(const std::vector<cv::Point2f> &corners, std::vector<cv::Point2f> &corners_corrected);
+        void calibrate();
 };
 
 }
