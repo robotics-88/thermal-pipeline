@@ -10,7 +10,7 @@ namespace thermal_pipeline
 Calibrator::Calibrator(ros::NodeHandle& node)
   : nh_(node)
   , private_nh_("~")
-  , calibrate_threshold_(15)
+  , calibrate_threshold_(25)
 {
     // Params
     private_nh_.param("checkerboard_squares", checkerboard_num_, checkerboard_num_);
@@ -39,13 +39,7 @@ void Calibrator::imageCallback(const sensor_msgs::Image::ConstPtr &image) {
     cv_ptr = cv_bridge::toCvCopy(image, sensor_msgs::image_encodings::BGRA8); 
     cv::Mat mat_float;
     mat_float = cv_ptr->image;
-    // Convert float to 
     cv::cvtColor(mat_float,mat_float,cv::COLOR_BGRA2GRAY);
-    mat_float.convertTo(mat_float, CV_8UC1);
-    cv::Mat mat_rect = mat_float;
-    // double min, max;
-    // cv::minMaxLoc(mat_float, &min, &max);
-    // std::cout << "min: " << min << ", max: " << max << std::endl;
 
     // Defining the world coordinates for 3D points
     std::vector<cv::Point3f> objp;
@@ -62,12 +56,10 @@ void Calibrator::imageCallback(const sensor_msgs::Image::ConstPtr &image) {
     bool success;
     
     cv::cvtColor(mat_float,frame,cv::COLOR_GRAY2BGR);
-    // cv::bitwise_not(mat_float, mat_float);
 
     // Finding checker board corners
     // If desired number of corners are found in the image then success = true  
-    success = cv::findChessboardCorners(mat_float, cv::Size(checkerboard_num_, checkerboard_num_), corner_pts, cv::CALIB_CB_ADAPTIVE_THRESH);
-    std::cout << "chessboard corner success? " << success << std::endl;
+    success = cv::findChessboardCorners(mat_float, cv::Size(checkerboard_num_, checkerboard_num_), corner_pts, cv::CALIB_CB_ADAPTIVE_THRESH | cv::CALIB_CB_NORMALIZE_IMAGE);
     
     /* 
     * If desired number of corner are detected,
@@ -77,10 +69,8 @@ void Calibrator::imageCallback(const sensor_msgs::Image::ConstPtr &image) {
     if(success)
     {
         cornersFromTop(corner_pts, corrected_corners);
-        cv::TermCriteria criteria(CV_TERMCRIT_EPS | CV_TERMCRIT_ITER, 30, 0.001);
         
         // refining pixel coordinates for given 2d points.
-        // cv::cornerSubPix(mat_float,corrected_corners,cv::Size(11,11), cv::Size(-1,-1),criteria);
         cv::cornerSubPix(mat_float, corrected_corners, cv::Size(11, 11), cv::Size(-1, -1), cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
         
         // Displaying the detected corner points on the checker board
@@ -89,6 +79,11 @@ void Calibrator::imageCallback(const sensor_msgs::Image::ConstPtr &image) {
         objpoints.push_back(objp);
         imgpoints.push_back(corrected_corners);
         calibrate_count_++;
+        float percent_complete = 100.0 * ((float) calibrate_count_ )/ ((float) calibrate_threshold_);
+        int perc = (int) percent_complete;
+        if (perc % 10 == 0) {
+            std::cout << perc << " percent calibrated..." << std::endl;
+        }
     }
     cv_bridge::CvImage chessboard_align_msg;
     chessboard_align_msg.header   = image->header; // Same timestamp and tf frame as input image
@@ -103,10 +98,12 @@ void Calibrator::imageCallback(const sensor_msgs::Image::ConstPtr &image) {
         else {
             // TODO something weird is happening in undistort, compare with ROS calibrator
             cv::Mat rect;
-            cv::undistort(mat_rect, rect, cameraMatrix, distCoeffs, optimal_mat);
+            cv::Mat mapx, mapy;
+            cv::initUndistortRectifyMap(cameraMatrix, distCoeffs, cv::Mat::eye(cv::Size(3,3), CV_64FC1), optimal_mat, cv::Size(img_rows_, img_cols_), CV_32FC1, mapx, mapy);
+            cv::remap(mat_float, rect, mapx, mapy, CV_INTER_LINEAR);
             cv_bridge::CvImage image_rect_msg;
             image_rect_msg.header   = image->header; // Same timestamp and tf frame as input image
-            image_rect_msg.encoding = sensor_msgs::image_encodings::TYPE_8UC1;
+            image_rect_msg.encoding = sensor_msgs::image_encodings::MONO8;
             image_rect_msg.image    = rect;
             image_rect_pub_.publish(image_rect_msg.toImageMsg());
         }
@@ -129,15 +126,12 @@ void Calibrator::cornersFromTop(const std::vector<cv::Point2f> &corners, std::ve
         return;
     }
     else if (!direction_corners.at(0) && !direction_corners.at(1)) {
-        ROS_DEBUG("flipped");
         cv::flip(corner_mat, corner_mat, 1);
     }
     else if (direction_corners.at(0)) {
-        ROS_DEBUG("rotate 90");
         cv::rotate(corner_mat, corner_mat, cv::ROTATE_90_CLOCKWISE);
     }
     else {
-        ROS_DEBUG("rotate 90 ccw");
         cv::rotate(corner_mat, corner_mat, cv::ROTATE_90_COUNTERCLOCKWISE);
     }
 
