@@ -3,7 +3,7 @@
 Author: Erin Linebarger <erin@robotics88.com> 
 */
 
-#include "thermal_pipeline/thermal_pipeline.h"
+#include "thermal_pipeline/thermal_pipeline_wrapper.h"
 
 int main(int argc, char** argv)
 {
@@ -14,7 +14,7 @@ int main(int argc, char** argv)
   }
 
   ros::NodeHandle node;
-  thermal_pipeline::Thermal thermal(node);
+  thermal_pipeline::ThermalWrapper thermal(node);
 
   ros::spin();
 

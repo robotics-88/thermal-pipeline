@@ -7,6 +7,7 @@ project(thermal_88)
 find_package(catkin REQUIRED COMPONENTS
   camera_calibration_parsers
   cv_bridge
+  message_filters
   roslib
   roscpp
   sensor_msgs
@@ -90,6 +91,7 @@ add_executable(thermal_wrapper_node src/thermal_node.cpp)
 
 ## Declare a C++ library
 add_library(thermal_pipeline
+  src/thermal_pipeline_wrapper.cpp
   src/thermal_pipeline.cpp
 )
 

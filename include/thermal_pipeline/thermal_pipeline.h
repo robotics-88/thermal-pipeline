@@ -10,22 +10,28 @@ Author: Erin Linebarger <erin@robotics88.com>
 
 #include <ros/ros.h>
 
+#include <cv_bridge/cv_bridge.h>
+#include <opencv2/core.hpp>
+
 namespace thermal_pipeline {
 /**
- * @class SpeciesMapper
- * @brief A class for converting images with bounding boxes on detected species into maps
+ * @class Thermal
+ * @brief A class for processing thermal imagery
  */
-class Thermal {
+class Thermal{
     public:
         Thermal(ros::NodeHandle& node);
 
         ~Thermal();
 
+        void thermalContours(const cv::Mat &img, cv::Mat &img_contours);
+        void convertToGray(cv::Mat &img);
+
     private:
         ros::NodeHandle nh_;
         ros::NodeHandle private_nh_;
-};
 
+};
 }
 
 #endif
