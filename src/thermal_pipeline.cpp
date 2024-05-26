@@ -29,7 +29,7 @@ void Thermal::convertToGray(cv::Mat &img) {
     }
 }
 
-void Thermal::thermalContours(const cv::Mat &img, cv::Mat &img_contours) {
+int Thermal::thermalContours(const cv::Mat &img, cv::Mat &img_contours) {
     // Save a copy of the unedited image
     cv::Mat original = img.clone();
 
@@ -53,13 +53,17 @@ void Thermal::thermalContours(const cv::Mat &img, cv::Mat &img_contours) {
     // Draw contours on the output image
     cv::cvtColor(original, img_contours, cv::COLOR_GRAY2BGR);
     cv::Scalar color = cv::Scalar( 0, 0, 255 );
+    double img_area = original.rows * original.cols;
     for( size_t i = 0; i< contours.size(); i++ )
     {
-        if (cv::contourArea(contours.at(i)) > 100) {
-            cv::drawContours( img_contours, contours, (int)i, color, 2, cv::LINE_8, hierarchy, 0 );
+        double area = cv::contourArea(contours.at(i));
+        std::cout << "area percent " << (area / img_area) << std::endl;
+        if ( area < 100 || (area / img_area) > 0.99) {
+            continue;
         }
+        cv::drawContours( img_contours, contours, (int)i, color, 2, cv::LINE_8, hierarchy, 0 );
     }
-    
+    return contours.size();
 }
 
 }

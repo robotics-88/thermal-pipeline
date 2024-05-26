@@ -24,7 +24,7 @@ class Thermal{
 
         ~Thermal();
 
-        void thermalContours(const cv::Mat &img, cv::Mat &img_contours);
+        int thermalContours(const cv::Mat &img, cv::Mat &img_contours);
         void convertToGray(cv::Mat &img);
 
     private:

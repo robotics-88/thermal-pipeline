@@ -36,6 +36,7 @@
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
 
+  <exec_depend>rviz</exec_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>

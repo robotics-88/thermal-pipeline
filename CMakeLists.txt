@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_filters
   roslib
   roscpp
+  rviz
   sensor_msgs
   std_msgs
 )
@@ -143,5 +144,21 @@ install(TARGETS thermal_wrapper_node
 #############
 ## Testing ##
 #############
-# if(CATKIN_ENABLE_TESTING)
-# endif()
+if(CATKIN_ENABLE_TESTING)
+  find_package(roslaunch REQUIRED)
+
+  # test all launch files
+  roslaunch_add_file_check(launch)
+
+  find_package(rostest REQUIRED)
+
+  add_rostest_gtest(tests_thermal
+    launch/test/tests_thermal.launch
+    src/thermal_pipeline.cpp
+    test/tests_thermal_pipeline.cpp
+  )
+  target_link_libraries(tests_thermal 
+    ${catkin_LIBRARIES}
+    ${OpenCV_LIBRARIES}
+  )
+endif()
