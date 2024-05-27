@@ -106,11 +106,11 @@ target_link_libraries(thermal_wrapper_node
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(thermal_calibrator_node src/calibrator_node.cpp)
+add_executable(thermal_calibrator_node src/calibration/calibrator_node.cpp)
 
 ## Declare a C++ library
 add_library(thermal_calibrator
-  src/calibrator.cpp
+  src/calibration/calibrator.cpp
 )
 
 ## Specify libraries to link a library or executable target against

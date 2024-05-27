@@ -56,6 +56,8 @@ class Calibrator {
 
         int img_rows_, img_cols_;
         int checkerboard_num_ = 7;
+        int checkerboard_rows_ = 3;
+        int checkerboard_cols_ = 5;
         int calibrate_count_ = 0;
         int calibrate_threshold_;
         bool calibrated_ = false;
@@ -64,6 +66,7 @@ class Calibrator {
 
         void cornersFromTop(const std::vector<cv::Point2f> &corners, std::vector<cv::Point2f> &corners_corrected);
         void calibrate();
+        void reprojectionErrors();
 };
 
 }
