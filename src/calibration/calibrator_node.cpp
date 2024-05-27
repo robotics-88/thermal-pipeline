@@ -3,7 +3,7 @@
 Author: Erin Linebarger <erin@robotics88.com> 
 */
 
-#include "thermal_pipeline/calibrator.h"
+#include "calibration/calibrator.h"
 
 int main(int argc, char** argv)
 {

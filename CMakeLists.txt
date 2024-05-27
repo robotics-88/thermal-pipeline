@@ -84,7 +84,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(thermal_wrapper_node src/thermal_node.cpp)
+add_executable(thermal_wrapper_node src/thermal_pipeline/thermal_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -92,8 +92,8 @@ add_executable(thermal_wrapper_node src/thermal_node.cpp)
 
 ## Declare a C++ library
 add_library(thermal_pipeline
-  src/thermal_pipeline_wrapper.cpp
-  src/thermal_pipeline.cpp
+  src/thermal_pipeline/thermal_pipeline_wrapper.cpp
+  src/thermal_pipeline/thermal_pipeline.cpp
 )
 
 ## Specify libraries to link a library or executable target against
@@ -154,7 +154,7 @@ if(CATKIN_ENABLE_TESTING)
 
   add_rostest_gtest(tests_thermal
     launch/test/tests_thermal.launch
-    src/thermal_pipeline.cpp
+    src/thermal_pipeline/thermal_pipeline.cpp
     test/tests_thermal_pipeline.cpp
   )
   target_link_libraries(tests_thermal 
