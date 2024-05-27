@@ -57,7 +57,6 @@ int Thermal::thermalContours(const cv::Mat &img, cv::Mat &img_contours) {
     for( size_t i = 0; i< contours.size(); i++ )
     {
         double area = cv::contourArea(contours.at(i));
-        std::cout << "area percent " << (area / img_area) << std::endl;
         if ( area < 100 || (area / img_area) > 0.99) {
             continue;
         }
