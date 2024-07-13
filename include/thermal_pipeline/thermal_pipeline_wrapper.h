@@ -36,6 +36,7 @@ class ThermalWrapper {
         thermal_pipeline::Thermal thermal_handler_;
 
         ros::Publisher thermal_pub_;
+        ros::Publisher thermal_flagged_pub_;
         message_filters::Subscriber<sensor_msgs::Image> thermal_cam_subscriber_;
         message_filters::Subscriber<sensor_msgs::CameraInfo> thermal_info_subscriber_;
 
@@ -44,6 +45,8 @@ class ThermalWrapper {
         boost::shared_ptr<Sync> sync_;
 
         void thermalImgCallback(const sensor_msgs::ImageConstPtr &img, const sensor_msgs::CameraInfoConstPtr &img_info);
+        void addFlagIcon(const std::vector<cv::Point> positions, cv::Mat &mat);
+        bool alphaBlend(const cv::Point upper_left, const cv::Mat overlay, cv::Mat &background, int index);
 };
 
 }

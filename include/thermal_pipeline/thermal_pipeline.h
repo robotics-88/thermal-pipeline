@@ -24,12 +24,16 @@ class Thermal{
 
         ~Thermal();
 
-        int thermalContours(const cv::Mat &img, cv::Mat &img_contours);
         void convertToGray(cv::Mat &img);
+        int thermalContours(const cv::Mat &img, cv::Mat &img_contours);
+        void contourCenters(std::vector<cv::Point> &centers);
+
 
     private:
         ros::NodeHandle nh_;
         ros::NodeHandle private_nh_;
+
+        std::vector<std::vector<cv::Point> > contours_;
 
 };
 }
