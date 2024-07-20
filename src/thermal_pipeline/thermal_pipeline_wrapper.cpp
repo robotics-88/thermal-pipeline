@@ -6,6 +6,7 @@ Author: Erin Linebarger <erin@robotics88.com>
 #include "thermal_pipeline/thermal_pipeline_wrapper.h"
 
 #include <opencv2/imgcodecs.hpp>
+#include <ros/package.h>
 
 // TODO this is just a hack to make a video quickly, replace using this vector with getting the actual GPS coordinates
 std::vector<std::string> latlong = {
@@ -75,7 +76,7 @@ void ThermalWrapper::thermalImgCallback(const sensor_msgs::ImageConstPtr &img, c
 // TODO make new subclass for image editing and move both 2 methods below?
 
 void ThermalWrapper::addFlagIcon(const std::vector<cv::Point> positions, cv::Mat &mat) {
-    cv::Mat smallImage = cv::imread("/home/erinpc/src/distal/src/thermal-pipeline/images/geo-arrow.png", cv::IMREAD_UNCHANGED); // TODO replace with find package
+    cv::Mat smallImage = cv::imread(ros::package::getPath("thermal_88") + "/images/geo-arrow.png", cv::IMREAD_UNCHANGED);
     int img_height = smallImage.rows;
     int img_width = smallImage.cols;
     cv::Mat foreground = cv::Mat::zeros(mat.size(), CV_8UC4);
@@ -97,7 +98,7 @@ bool ThermalWrapper::alphaBlend(const cv::Point upper_left, const cv::Mat overla
     try {
         destRoi = background(cv::Rect(upper_left.x, upper_left.y, overlay.cols, overlay.rows));
     }  catch (...) {
-        std::cerr << "Trying to create roi out of image boundaries" << std::endl;
+        // TODO truncate or move the tag?
         return false;
     }
     int alpha = 255;
