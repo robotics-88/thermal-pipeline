@@ -9,5 +9,11 @@
         <param name="rviz" value="$(arg use_rviz)"/>
     </node>
 
+    <!-- Delete this after PR testing! -->
+    <group ns="seek_thermal">
+        <node pkg="image_proc" type="image_proc" name="image_proc"/>
+    </group>
+    <!--  -->
+
     <node type="rviz" name="calib_rviz" pkg="rviz" args="-d $(find thermal_88)/config/pipeline.rviz" if="$(arg use_rviz)"/>
 </launch>
