@@ -17,11 +17,12 @@ Author: Erin Linebarger <erin@robotics88.com>
 #include <sensor_msgs/CameraInfo.h>
 
 #include "thermal_pipeline/thermal_pipeline.h"
+#include "thermal_pipeline/image_annotation.h"
 
 namespace thermal_pipeline {
 /**
  * @class ThermalWrapper
- * @brief A class for processing thermal imagery
+ * @brief A class for pub/sub and wrapper for thermal imagery
  */
 class ThermalWrapper {
     public:
@@ -33,7 +34,9 @@ class ThermalWrapper {
     private:
         ros::NodeHandle nh_;
         ros::NodeHandle private_nh_;
+
         thermal_pipeline::Thermal thermal_handler_;
+        thermal_pipeline::ImageAnnotator image_annotator_;
 
         ros::Publisher thermal_pub_;
         ros::Publisher thermal_flagged_pub_;
@@ -45,8 +48,6 @@ class ThermalWrapper {
         boost::shared_ptr<Sync> sync_;
 
         void thermalImgCallback(const sensor_msgs::ImageConstPtr &img, const sensor_msgs::CameraInfoConstPtr &img_info);
-        void addFlagIcon(const std::vector<cv::Point> positions, cv::Mat &mat);
-        bool alphaBlend(const cv::Point upper_left, const cv::Mat overlay, cv::Mat &background, int index);
 };
 
 }

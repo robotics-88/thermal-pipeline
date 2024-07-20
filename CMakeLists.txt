@@ -92,6 +92,7 @@ add_executable(thermal_wrapper_node src/thermal_pipeline/thermal_node.cpp)
 
 ## Declare a C++ library
 add_library(thermal_pipeline
+  src/thermal_pipeline/image_annotation.cpp
   src/thermal_pipeline/thermal_pipeline_wrapper.cpp
   src/thermal_pipeline/thermal_pipeline.cpp
 )
