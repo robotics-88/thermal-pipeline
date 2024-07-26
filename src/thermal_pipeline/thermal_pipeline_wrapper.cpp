@@ -4,12 +4,18 @@ Author: Erin Linebarger <erin@robotics88.com>
 */
 
 #include "thermal_pipeline/thermal_pipeline_wrapper.h"
+#include <messages_88/Geopoint.h>
+
+#include <geometry_msgs/PointStamped.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 
 namespace thermal_pipeline
 {
 ThermalWrapper::ThermalWrapper(ros::NodeHandle& node)
     : nh_(node)
     , private_nh_("~")
+    , tf_listener_(tf_buffer_)
+    , map_frame_("map")
     , thermal_handler_(nh_)
     , image_annotator_(nh_)
 {
@@ -17,6 +23,9 @@ ThermalWrapper::ThermalWrapper(ros::NodeHandle& node)
     std::string info_topic = "/thermal_cam/camera_info";
     private_nh_.param<std::string>("image_topic", thermal_topic, thermal_topic);
     private_nh_.param<std::string>("camera_info_topic", info_topic, info_topic);
+    private_nh_.param<std::string>("map_frame", map_frame_, map_frame_);
+
+    geo_client_ = nh_.serviceClient<messages_88::Geopoint>("/slam2geo");
 
     thermal_cam_subscriber_.subscribe(nh_, thermal_topic, 10);
     thermal_info_subscriber_.subscribe(nh_, info_topic, 10);
@@ -45,11 +54,21 @@ void ThermalWrapper::thermalImgCallback(const sensor_msgs::ImageConstPtr &img, c
     cv::Mat thermal_contour_mat;
     thermal_handler_.thermalContours(thermal_mat, thermal_contour_mat);
 
-    // Get centers
+    // Get projected centers
     cv::Mat flagged_mat = cv_ptr->image.clone();
     std::vector<cv::Point> centers;
-    thermal_handler_.contourCenters(centers);
-    image_annotator_.addFlagIcon(centers, flagged_mat);
+    std::vector<cv::Point3d> projected_centers;
+    thermal_handler_.contourCenters(*img_info, centers, projected_centers);
+
+    // Transform centers
+    std::vector<geometry_msgs::Point> gps_centers;
+    bool did_transform = transformImagePoints(projected_centers, img->header, gps_centers);
+    if (!did_transform) {
+        return;
+    }
+
+    // Label images
+    image_annotator_.addFlagIcon(centers, gps_centers, flagged_mat);
 
     // Publish contour image
     cv_bridge::CvImage thermal_contour_msg;
@@ -62,6 +81,45 @@ void ThermalWrapper::thermalImgCallback(const sensor_msgs::ImageConstPtr &img, c
     thermal_contour_msg.encoding = sensor_msgs::image_encodings::BGRA8;
     thermal_contour_msg.image    = flagged_mat;
     thermal_flagged_pub_.publish(thermal_contour_msg.toImageMsg());
+}
+
+bool ThermalWrapper::transformImagePoints(const std::vector<cv::Point3d> &centers, const std_msgs::Header &header, std::vector<geometry_msgs::Point> &gps_centers) {
+    if (!geo_client_.exists()) {
+        return false;
+    }
+    geometry_msgs::TransformStamped transform_image2map;
+    std::string transform_error;
+    try{
+        transform_image2map = tf_buffer_.lookupTransform(map_frame_, header.frame_id, header.stamp);
+    }
+    catch (tf2::TransformException &ex) {
+        ROS_WARN("%s",ex.what());
+        return false;
+    }
+    for (int i = 0; i < centers.size(); i++) {
+        // Project to map
+        geometry_msgs::PointStamped image_point_3d, map_point;
+        image_point_3d.header = header;
+        image_point_3d.point.x = centers.at(i).x;
+        image_point_3d.point.y = centers.at(i).y;
+        image_point_3d.point.z = centers.at(i).z;
+        tf2::doTransform(image_point_3d, map_point, transform_image2map);
+
+        // Get lat/long
+        geometry_msgs::Point geo_map_point;
+        geo_map_point.x = map_point.point.x;
+        geo_map_point.y = map_point.point.y;
+        geo_map_point.z = map_point.point.z;
+        messages_88::Geopoint geo_request;
+        geo_request.request.slam_position = geo_map_point;
+        geo_client_.call(geo_request);
+        geometry_msgs::Point world_point;
+        world_point.x = geo_request.response.latitude;
+        world_point.y = geo_request.response.longitude;
+
+        gps_centers.push_back(world_point);
+    }
+    return true;
 }
 
 }

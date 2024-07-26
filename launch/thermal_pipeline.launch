@@ -1,6 +1,7 @@
 <launch>
     <arg name="image_topic" default="/seek_thermal/image_rect_color"/>
     <arg name="camera_info_topic" default="/seek_thermal/camera_info"/>
+    <arg name="map_frame" default="map"/>
     <arg name="use_rviz" default="true"/>
 
     <node pkg="thermal_88" type="thermal_wrapper_node" name="thermal_pipeline" output="screen">

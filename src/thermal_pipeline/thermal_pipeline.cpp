@@ -12,6 +12,7 @@ namespace thermal_pipeline
 Thermal::Thermal(ros::NodeHandle& node)
     : nh_(node)
     , private_nh_("~")
+    , camera_model_set_(false)
 {
 }
 
@@ -67,12 +68,30 @@ int Thermal::thermalContours(const cv::Mat &img, cv::Mat &img_contours) {
     return all_contours.size();
 }
 
-void Thermal::contourCenters(std::vector<cv::Point> &centers) {
+void Thermal::contourCenters(const sensor_msgs::CameraInfo &info, std::vector<cv::Point> &centers, std::vector<cv::Point3d> &projected_centers) {
+    if (!camera_model_set_) {
+        camera_model_.fromCameraInfo(info);
+    }
+
     for ( size_t i = 0; i< contours_.size(); i++ ) {
         cv::Moments m = cv::moments(contours_.at(i));
         cv::Point p(m.m10/m.m00, m.m01/m.m00);
         centers.push_back(p);
+        // Projected
+        cv::Point3d ray3d = camera_model_.projectPixelTo3dRay(centers.at(i));
+        projected_centers.push_back(ray3d);
     }
 }
+
+// void Thermal::projectedCenters(const std::vector<cv::Point> &centers, const sensor_msgs::CameraInfo &info, const geometry_msgs::TransformStamped &transform_image2map, const std_msgs::Header &header, std::vector<cv::Point> &projected_centers) {
+//     if (!camera_model_set_) {
+//         camera_model_.fromCameraInfo(info);
+//     }
+//     for ( size_t i = 0; i< centers.size(); i++ ) {
+//         cv::Point3d ray3d = camera_model_.projectPixelTo3dRay(centers.at(i));
+//         cv::Point p;
+//         projected_centers.push_back(p);
+//     }
+// }
 
 }

@@ -9,6 +9,7 @@ Author: Erin Linebarger <erin@robotics88.com>
 #include <string>
 
 #include <ros/ros.h>
+#include <geometry_msgs/Point.h>
 
 #include <opencv2/core.hpp>
 
@@ -23,8 +24,8 @@ class ImageAnnotator{
 
         ~ImageAnnotator();
 
-        void addFlagIcon(const std::vector<cv::Point> positions, cv::Mat &mat);
-        bool alphaBlend(const cv::Point upper_left, cv::Mat &background, int index);
+        void addFlagIcon(const std::vector<cv::Point> &positions, const std::vector<geometry_msgs::Point> &gps_centers, cv::Mat &mat);
+        bool alphaBlend(const cv::Point upper_left, const std::string label, cv::Mat &background, int index);
 
     private:
         ros::NodeHandle nh_;

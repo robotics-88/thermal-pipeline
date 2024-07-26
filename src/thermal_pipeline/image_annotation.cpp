@@ -10,12 +10,6 @@ Author: Erin Linebarger <erin@robotics88.com>
 #include "opencv2/imgproc.hpp"
 #include <opencv2/imgcodecs.hpp>
 
-// TODO this is just a hack to make a video quickly, replace using this vector with getting the actual GPS coordinates
-std::vector<std::string> latlong = {
-    "37.03, -121.746",
-    "37.031, -121.745"
-};
-
 namespace thermal_pipeline
 {
 ImageAnnotator::ImageAnnotator(ros::NodeHandle& node)
@@ -28,21 +22,21 @@ ImageAnnotator::ImageAnnotator(ros::NodeHandle& node)
 ImageAnnotator::~ImageAnnotator() {
 }
 
-void ImageAnnotator::addFlagIcon(const std::vector<cv::Point> positions, cv::Mat &mat) {
+void ImageAnnotator::addFlagIcon(const std::vector<cv::Point> &positions, const std::vector<geometry_msgs::Point> &gps_centers, cv::Mat &mat) {
     cv::Mat foreground = cv::Mat::zeros(mat.size(), CV_8UC4);
     int flag_count = 0;
     int flag_max = 2;
     for (int ii = 0; ii < positions.size(); ii++) {
         cv::Point p(positions.at(ii).x - (gps_icon_mat_.cols / 2), positions.at(ii).y - gps_icon_mat_.rows);
-        // cv::circle(mat, positions.at(ii), 5, cv::Scalar(177,193,81), -1);
+        std::string gps_label = std::to_string(gps_centers.at(ii).x) + ", " + std::to_string(gps_centers.at(ii).y);
         if (flag_count < flag_max) {
-            bool flagged = alphaBlend(p, mat, flag_count);
+            bool flagged = alphaBlend(p, gps_label, mat, flag_count);
             if (flagged) flag_count++;
         }
     }
 }
 
-bool ImageAnnotator::alphaBlend(const cv::Point upper_left, cv::Mat &background, int index) {
+bool ImageAnnotator::alphaBlend(const cv::Point upper_left, const std::string label, cv::Mat &background, int index) {
     // Check if overlay position would fit on background
     cv::Mat destRoi;
     try {
@@ -67,7 +61,7 @@ bool ImageAnnotator::alphaBlend(const cv::Point upper_left, cv::Mat &background,
             }
         }
     }
-    cv::putText(background, latlong[index], upper_left, cv::FONT_HERSHEY_SCRIPT_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 1, cv::LINE_AA);
+    cv::putText(background, label, upper_left, cv::FONT_HERSHEY_SCRIPT_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 1, cv::LINE_AA);
 }
 
 }
