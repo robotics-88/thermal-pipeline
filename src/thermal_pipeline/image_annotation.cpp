@@ -22,44 +22,42 @@ ImageAnnotator::ImageAnnotator(ros::NodeHandle& node)
     : nh_(node)
     , private_nh_("~")
 {
+    gps_icon_mat_ = cv::imread(ros::package::getPath("thermal_88") + "/images/geo-arrow.png", cv::IMREAD_UNCHANGED);
 }
 
 ImageAnnotator::~ImageAnnotator() {
 }
 
 void ImageAnnotator::addFlagIcon(const std::vector<cv::Point> positions, cv::Mat &mat) {
-    cv::Mat smallImage = cv::imread(ros::package::getPath("thermal_88") + "/images/geo-arrow.png", cv::IMREAD_UNCHANGED);
-    int img_height = smallImage.rows;
-    int img_width = smallImage.cols;
     cv::Mat foreground = cv::Mat::zeros(mat.size(), CV_8UC4);
     int flag_count = 0;
     int flag_max = 2;
     for (int ii = 0; ii < positions.size(); ii++) {
-        cv::Point p(positions.at(ii).x - (img_width / 2), positions.at(ii).y - img_height);
+        cv::Point p(positions.at(ii).x - (gps_icon_mat_.cols / 2), positions.at(ii).y - gps_icon_mat_.rows);
         // cv::circle(mat, positions.at(ii), 5, cv::Scalar(177,193,81), -1);
         if (flag_count < flag_max) {
-            bool flagged = alphaBlend(p, smallImage, mat, flag_count);
+            bool flagged = alphaBlend(p, mat, flag_count);
             if (flagged) flag_count++;
         }
     }
 }
 
-bool ImageAnnotator::alphaBlend(const cv::Point upper_left, const cv::Mat overlay, cv::Mat &background, int index) {
+bool ImageAnnotator::alphaBlend(const cv::Point upper_left, cv::Mat &background, int index) {
     // Check if overlay position would fit on background
     cv::Mat destRoi;
     try {
-        destRoi = background(cv::Rect(upper_left.x, upper_left.y, overlay.cols, overlay.rows));
+        destRoi = background(cv::Rect(upper_left.x, upper_left.y, gps_icon_mat_.cols, gps_icon_mat_.rows));
     }  catch (...) {
         // TODO truncate or move the tag?
         return false;
     }
     int alpha = 255;
     int white_threshold = 100; // Can make this really low because the flag itself has a red value of 2
-    for (int r = 0; r < overlay.rows; r++) {
-        for (int c = 0; c < overlay.cols; c++) {
+    for (int r = 0; r < gps_icon_mat_.rows; r++) {
+        for (int c = 0; c < gps_icon_mat_.cols; c++) {
             cv::Point background_point(upper_left.x + c, upper_left.y + r);
             cv::Point overlay_point(c, r);
-            cv::Vec4b p = overlay.at<cv::Vec4b>(overlay_point);
+            cv::Vec4b p = gps_icon_mat_.at<cv::Vec4b>(overlay_point);
             if (p[0] >= white_threshold && p[1] >= white_threshold && p[2] >= white_threshold) {
                 // White points should be transparent so leave background as is
                 continue;

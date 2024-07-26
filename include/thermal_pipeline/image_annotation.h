@@ -24,11 +24,13 @@ class ImageAnnotator{
         ~ImageAnnotator();
 
         void addFlagIcon(const std::vector<cv::Point> positions, cv::Mat &mat);
-        bool alphaBlend(const cv::Point upper_left, const cv::Mat overlay, cv::Mat &background, int index);
+        bool alphaBlend(const cv::Point upper_left, cv::Mat &background, int index);
 
     private:
         ros::NodeHandle nh_;
         ros::NodeHandle private_nh_;
+
+        cv::Mat gps_icon_mat_;
 
 };
 }
