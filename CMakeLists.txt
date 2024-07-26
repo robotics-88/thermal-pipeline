@@ -7,12 +7,18 @@ project(thermal_88)
 find_package(catkin REQUIRED COMPONENTS
   camera_calibration_parsers
   cv_bridge
+  image_geometry
   message_filters
+  messages_88
   roslib
   roscpp
   rviz
   sensor_msgs
   std_msgs
+  tf2
+  tf2_msgs
+  tf2_ros
+  tf2_geometry_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -51,8 +57,14 @@ find_package(OpenCV REQUIRED)
 catkin_package(
   CATKIN_DEPENDS
     cv_bridge
+    image_geometry
+    messages_88
     sensor_msgs
     std_msgs
+    tf2
+    tf2_msgs
+    tf2_ros
+    tf2_geometry_msgs
 )
 
 ###########
@@ -92,6 +104,7 @@ add_executable(thermal_wrapper_node src/thermal_pipeline/thermal_node.cpp)
 
 ## Declare a C++ library
 add_library(thermal_pipeline
+  src/thermal_pipeline/image_annotation.cpp
   src/thermal_pipeline/thermal_pipeline_wrapper.cpp
   src/thermal_pipeline/thermal_pipeline.cpp
 )
