@@ -7,7 +7,7 @@
     <node pkg="thermal_88" type="thermal_wrapper_node" name="thermal_pipeline" output="screen">
         <param name="image_topic" value="$(arg image_topic)"/>
         <param name="camera_info_topic" value="$(arg camera_info_topic)"/>
-        <param name="rviz" value="$(arg use_rviz)"/>
+        <param name="use_rviz" value="$(arg use_rviz)"/>
     </node>
 
     <!-- Delete this after PR testing! -->

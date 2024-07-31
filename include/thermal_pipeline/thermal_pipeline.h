@@ -28,7 +28,7 @@ class Thermal{
         ~Thermal();
 
         void convertToGray(cv::Mat &img);
-        int thermalContours(const cv::Mat &img, cv::Mat &img_contours);
+        int thermalContours(const cv::Mat &img, cv::Mat &img_contours, double min, double max);
         void contourCenters(const sensor_msgs::CameraInfo &info, std::vector<cv::Point> &centers, std::vector<cv::Point3d> &projected_centers);
 
     private:

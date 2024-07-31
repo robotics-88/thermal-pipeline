@@ -30,7 +30,7 @@ void Thermal::convertToGray(cv::Mat &img) {
     }
 }
 
-int Thermal::thermalContours(const cv::Mat &img, cv::Mat &img_contours) {
+int Thermal::thermalContours(const cv::Mat &img, cv::Mat &img_contours, double min, double max) {
     contours_.clear();
     // Save a copy of the unedited image
     cv::Mat original = img.clone();
@@ -44,8 +44,8 @@ int Thermal::thermalContours(const cv::Mat &img, cv::Mat &img_contours) {
     cv::erode(img, img, element);
 
     // Apply tresholding to remove low temperatures
-    double threshold = 150;
-    cv::threshold(img, img, threshold, 255, cv::THRESH_TOZERO);
+    double threshold = 200;
+    cv::threshold(img, img, min, max, cv::THRESH_TOZERO);
     
     // Find contours on the filtered image
     std::vector<std::vector<cv::Point> > all_contours;
