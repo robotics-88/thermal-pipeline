@@ -19,6 +19,7 @@ ThermalWrapper::ThermalWrapper(ros::NodeHandle& node)
     , use_rviz_(true)
     , thermal_handler_(nh_)
     , image_annotator_(nh_)
+    , hotspot_tracker_(nh_)
 {
     std::string thermal_topic = "/thermal_cam/image_rect_color";
     std::string info_topic = "/thermal_cam/camera_info";
@@ -31,8 +32,8 @@ ThermalWrapper::ThermalWrapper(ros::NodeHandle& node)
 
     thermal_cam_subscriber_.subscribe(nh_, thermal_topic, 10);
     thermal_info_subscriber_.subscribe(nh_, info_topic, 10);
-    secondary_cam_subscriber_.subscribe(nh_, "/mapir_rgn/image_raw", 10);
-    secondary_info_subscriber_.subscribe(nh_, "/mapir_rgn/camera_info", 10);
+    secondary_cam_subscriber_.subscribe(nh_, "/mapir_rgb/image_raw", 10);
+    secondary_info_subscriber_.subscribe(nh_, "/mapir_rgb/camera_info", 10);
 
     sync_.reset(new Sync(MySyncPolicy(10), thermal_cam_subscriber_, thermal_info_subscriber_, secondary_cam_subscriber_, secondary_info_subscriber_));
     sync_->registerCallback(boost::bind(&ThermalWrapper::thermalImgCallback, this, _1, _2, _3, _4));
@@ -46,6 +47,10 @@ ThermalWrapper::~ThermalWrapper() {
 }
 
 void ThermalWrapper::thermalImgCallback(const sensor_msgs::ImageConstPtr &img, const sensor_msgs::CameraInfoConstPtr &img_info, const sensor_msgs::ImageConstPtr &second_img, const sensor_msgs::CameraInfoConstPtr &second_img_info) {
+    if (!camera_model_set_) {
+        thermal_model_.fromCameraInfo(img_info);
+        second_model_.fromCameraInfo(second_img_info);
+    }
     // Convert image to cv Mat
     cv_bridge::CvImagePtr cv_ptr; 
     cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::BGRA8); 
@@ -67,18 +72,28 @@ void ThermalWrapper::thermalImgCallback(const sensor_msgs::ImageConstPtr &img, c
     // Process primary image
     std::vector<cv::Point3d> projected_centers;
     std::vector<cv::Point> centers;
+    std::vector<std::vector<cv::Point3d> > thermal_contours;
+    std::vector<std::vector<geometry_msgs::PointStamped> > thermal_contours_map;
     cv::Mat contour_mat;
     double min = 200;
     double max = 255;
-    processSingleImage(thermal_mat, img_info, min, max, contour_mat, centers, projected_centers);
+    thermal_handler_.thermalContours(thermal_mat, min, thermal_model_, contour_mat, thermal_contours);
+    transformContours(img->header, thermal_contours, thermal_contours_map);
+    // processSingleImage(thermal_mat, img_info, min, max, contour_mat, centers, projected_centers, thermal_contours);
 
     // Process secondary image
     std::vector<cv::Point3d> projected_centers2;
     std::vector<cv::Point> ignore;
+    std::vector<std::vector<cv::Point3d> > second_contours;
+    std::vector<std::vector<geometry_msgs::PointStamped> > second_contours_map;
     cv::Mat contour_mat2;
     min = 190;
     max = 255;
-    processSingleImage(nir, second_img_info, min, max, contour_mat2, ignore, projected_centers2);
+    thermal_handler_.thermalContours(nir, min, second_model_, contour_mat2, second_contours);
+    transformContours(second_img->header, second_contours, second_contours_map);
+    // processSingleImage(nir, second_img_info, min, max, contour_mat2, ignore, projected_centers2, second_contours);
+
+    hotspot_tracker_.nirFilter(thermal_contours_map, second_contours_map);
 
     // Transform centers
     std::vector<geometry_msgs::Point> gps_centers;
@@ -111,12 +126,42 @@ void ThermalWrapper::thermalImgCallback(const sensor_msgs::ImageConstPtr &img, c
 
 }
 
-void ThermalWrapper::processSingleImage(const cv::Mat &image, const sensor_msgs::CameraInfoConstPtr &img_info, double min, double max, cv::Mat &contour_image, std::vector<cv::Point> &centers, std::vector<cv::Point3d> &contour_centers) {
-    // Get contours
-    thermal_handler_.thermalContours(image, contour_image, min, max);
+void ThermalWrapper::transformContours(const std_msgs::Header header, const std::vector<std::vector<cv::Point3d> > &contours, std::vector<std::vector<geometry_msgs::PointStamped> > &map_contours) {
+    geometry_msgs::TransformStamped transform_thermal2map;
+    std::string transform_error;
+    try{
+        transform_thermal2map = tf_buffer_.lookupTransform(map_frame_, header.frame_id, header.stamp);
+    }
+    catch (tf2::TransformException &ex) {
+        ROS_WARN("%s",ex.what());
+        return;
+    }
+    for (int ii = 0; ii < contours.size(); ii++) {
+        std::vector<geometry_msgs::PointStamped> contour_map;
+        for (int jj = 0; jj < contours.at(ii).size(); jj++) {
+            geometry_msgs::PointStamped map_point;
+            transformCVPoint(contours.at(ii).at(jj), transform_thermal2map, header, map_point);
+            contour_map.push_back(map_point);
+        }
+        map_contours.push_back(contour_map);
+    }
+}
 
-    // Get projected centers
-    thermal_handler_.contourCenters(*img_info, centers, contour_centers);
+// void ThermalWrapper::processSingleImage(const cv::Mat &image, const sensor_msgs::CameraInfoConstPtr &img_info, double min, double max, cv::Mat &contour_image, std::vector<cv::Point> &centers, std::vector<cv::Point3d> &contour_centers) {
+//     // Get contours
+//     thermal_handler_.thermalContours(image, contour_image, min, max);
+
+//     // Get projected centers
+//     thermal_handler_.contourCenters(*img_info, centers, contour_centers);
+// }
+
+bool ThermalWrapper::transformCVPoint(const cv::Point3d point, const geometry_msgs::TransformStamped transform_image2map, const std_msgs::Header header, geometry_msgs::PointStamped &map_point) {
+    geometry_msgs::PointStamped image_point_3d;
+    image_point_3d.header = header;
+    image_point_3d.point.x = point.x;
+    image_point_3d.point.y = point.y;
+    image_point_3d.point.z = point.z;
+    tf2::doTransform(image_point_3d, map_point, transform_image2map);
 }
 
 bool ThermalWrapper::getImagePointsInGPS(const std::vector<cv::Point3d> &centers, const std_msgs::Header &header, std::vector<geometry_msgs::Point> &gps_centers) {
@@ -134,12 +179,8 @@ bool ThermalWrapper::getImagePointsInGPS(const std::vector<cv::Point3d> &centers
     }
     for (int i = 0; i < centers.size(); i++) {
         // Project to map
-        geometry_msgs::PointStamped image_point_3d, map_point;
-        image_point_3d.header = header;
-        image_point_3d.point.x = centers.at(i).x;
-        image_point_3d.point.y = centers.at(i).y;
-        image_point_3d.point.z = centers.at(i).z;
-        tf2::doTransform(image_point_3d, map_point, transform_image2map);
+        geometry_msgs::PointStamped map_point;
+        transformCVPoint(centers.at(i), transform_image2map, header, map_point);
 
         // Get lat/long
         geometry_msgs::Point geo_map_point;

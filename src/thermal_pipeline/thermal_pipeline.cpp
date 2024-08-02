@@ -12,7 +12,6 @@ namespace thermal_pipeline
 Thermal::Thermal(ros::NodeHandle& node)
     : nh_(node)
     , private_nh_("~")
-    , camera_model_set_(false)
 {
 }
 
@@ -30,7 +29,7 @@ void Thermal::convertToGray(cv::Mat &img) {
     }
 }
 
-int Thermal::thermalContours(const cv::Mat &img, cv::Mat &img_contours, double min, double max) {
+int Thermal::thermalContours(const cv::Mat &img, const double min, const image_geometry::PinholeCameraModel model, cv::Mat &img_contours, std::vector<std::vector<cv::Point3d> > &contours) {
     contours_.clear();
     // Save a copy of the unedited image
     cv::Mat original = img.clone();
@@ -45,7 +44,7 @@ int Thermal::thermalContours(const cv::Mat &img, cv::Mat &img_contours, double m
 
     // Apply tresholding to remove low temperatures
     double threshold = 200;
-    cv::threshold(img, img, min, max, cv::THRESH_TOZERO);
+    cv::threshold(img, img, min, 255, cv::THRESH_TOZERO);
     
     // Find contours on the filtered image
     std::vector<std::vector<cv::Point> > all_contours;
@@ -68,30 +67,22 @@ int Thermal::thermalContours(const cv::Mat &img, cv::Mat &img_contours, double m
     return all_contours.size();
 }
 
-void Thermal::contourCenters(const sensor_msgs::CameraInfo &info, std::vector<cv::Point> &centers, std::vector<cv::Point3d> &projected_centers) {
-    if (!camera_model_set_) {
-        camera_model_.fromCameraInfo(info);
-    }
-
+void Thermal::contourCenters(const image_geometry::PinholeCameraModel model, std::vector<cv::Point> &centers, std::vector<cv::Point3d> &projected_centers) {
     for ( size_t i = 0; i< contours_.size(); i++ ) {
         cv::Moments m = cv::moments(contours_.at(i));
         cv::Point p(m.m10/m.m00, m.m01/m.m00);
         centers.push_back(p);
         // Projected
-        cv::Point3d ray3d = camera_model_.projectPixelTo3dRay(centers.at(i));
+        cv::Point3d ray3d = model.projectPixelTo3dRay(centers.at(i));
         projected_centers.push_back(ray3d);
     }
 }
 
-// void Thermal::projectedCenters(const std::vector<cv::Point> &centers, const sensor_msgs::CameraInfo &info, const geometry_msgs::TransformStamped &transform_image2map, const std_msgs::Header &header, std::vector<cv::Point> &projected_centers) {
-//     if (!camera_model_set_) {
-//         camera_model_.fromCameraInfo(info);
-//     }
-//     for ( size_t i = 0; i< centers.size(); i++ ) {
-//         cv::Point3d ray3d = camera_model_.projectPixelTo3dRay(centers.at(i));
-//         cv::Point p;
-//         projected_centers.push_back(p);
-//     }
-// }
+void Thermal::projectContour(const image_geometry::PinholeCameraModel model, const std::vector<cv::Point> &contour, std::vector<cv::Point3d> &projected_contour) {
+    for ( size_t i = 0; i< contour.size(); i++ ) {
+        cv::Point3d ray3d = model.projectPixelTo3dRay(contour.at(i));
+        projected_contour.push_back(ray3d);
+    }
+}
 
 }
