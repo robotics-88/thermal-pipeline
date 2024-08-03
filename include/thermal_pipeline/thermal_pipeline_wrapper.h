@@ -51,6 +51,7 @@ class ThermalWrapper {
 
         ros::Publisher thermal_contour_pub_;
         ros::Publisher second_contour_pub_;
+        ros::Publisher filtered_contour_pub_;
         ros::Publisher thermal_flagged_pub_;
         message_filters::Subscriber<sensor_msgs::Image> thermal_cam_subscriber_;
         message_filters::Subscriber<sensor_msgs::CameraInfo> thermal_info_subscriber_;
@@ -66,7 +67,8 @@ class ThermalWrapper {
         boost::shared_ptr<Sync> sync_;
 
         void thermalImgCallback(const sensor_msgs::ImageConstPtr &img, const sensor_msgs::CameraInfoConstPtr &img_info, const sensor_msgs::ImageConstPtr &second_img, const sensor_msgs::CameraInfoConstPtr &second_img_info);
-        void transformContours(const std_msgs::Header header, const std::vector<std::vector<cv::Point3d> > &contours, std::vector<std::vector<geometry_msgs::PointStamped> > &map_contours);
+        bool transformContours(const image_geometry::PinholeCameraModel model, const std_msgs::Header header, const std::vector<std::vector<cv::Point> > &contours, std::vector<std::vector<geometry_msgs::PointStamped> > &map_contours);
+        void mapContoursToImage();
         void processSingleImage(const cv::Mat &image, const sensor_msgs::CameraInfoConstPtr &img_info, double min, double max, cv::Mat &contour_image, std::vector<cv::Point> &centers, std::vector<cv::Point3d> &contour_centers);
         bool getImagePointsInGPS(const std::vector<cv::Point3d> &centers, const std_msgs::Header &header, std::vector<geometry_msgs::Point> &gps_centers);
         bool transformCVPoint(const cv::Point3d point, const geometry_msgs::TransformStamped transform_image2map, std_msgs::Header header, geometry_msgs::PointStamped &map_point);

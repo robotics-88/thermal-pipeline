@@ -24,7 +24,7 @@ class HotspotTracker{
 
         ~HotspotTracker();
 
-        void nirFilter(const std::vector<std::vector<geometry_msgs::PointStamped> > &thermal_contours, const std::vector<std::vector<geometry_msgs::PointStamped> > &second_contours);
+        void nirFilter(const std::vector<std::vector<geometry_msgs::PointStamped> > &thermal_contours, const std::vector<std::vector<geometry_msgs::PointStamped> > &second_contours, std::vector<int> &indices);
 
     private:
         ros::NodeHandle nh_;

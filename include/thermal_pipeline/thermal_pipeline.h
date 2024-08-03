@@ -28,7 +28,7 @@ class Thermal{
         ~Thermal();
 
         void convertToGray(cv::Mat &img);
-        int thermalContours(const cv::Mat &img, const double min, const image_geometry::PinholeCameraModel model, cv::Mat &img_contours, std::vector<std::vector<cv::Point3d> > &contours);
+        int thermalContours(const cv::Mat &img, const double min, const image_geometry::PinholeCameraModel model, std::vector<std::vector<cv::Point> > &contours);
         void contourCenters(const image_geometry::PinholeCameraModel model, std::vector<cv::Point> &centers, std::vector<cv::Point3d> &projected_centers);
         void projectContour(const image_geometry::PinholeCameraModel model, const std::vector<cv::Point> &contour, std::vector<cv::Point3d> &projected_contour);
 

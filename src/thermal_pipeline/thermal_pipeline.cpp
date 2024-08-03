@@ -29,7 +29,7 @@ void Thermal::convertToGray(cv::Mat &img) {
     }
 }
 
-int Thermal::thermalContours(const cv::Mat &img, const double min, const image_geometry::PinholeCameraModel model, cv::Mat &img_contours, std::vector<std::vector<cv::Point3d> > &contours) {
+int Thermal::thermalContours(const cv::Mat &img, const double min, const image_geometry::PinholeCameraModel model, std::vector<std::vector<cv::Point> > &contours) {
     contours_.clear();
     // Save a copy of the unedited image
     cv::Mat original = img.clone();
@@ -51,9 +51,9 @@ int Thermal::thermalContours(const cv::Mat &img, const double min, const image_g
     std::vector<cv::Vec4i> hierarchy;
     findContours( img, all_contours, hierarchy, cv::RETR_TREE, cv::CHAIN_APPROX_SIMPLE );
 
-    // Draw contours on the output image
-    cv::cvtColor(original, img_contours, cv::COLOR_GRAY2BGR);
-    cv::Scalar color = cv::Scalar( 0, 0, 255 );
+    // Filter contours by size
+    // cv::cvtColor(original, img_contours, cv::COLOR_GRAY2BGR);
+    // cv::Scalar color = cv::Scalar( 0, 0, 255 );
     double img_area = original.rows * original.cols;
     for ( size_t i = 0; i< all_contours.size(); i++ )
     {
@@ -61,9 +61,10 @@ int Thermal::thermalContours(const cv::Mat &img, const double min, const image_g
         if ( area < 100 || (area / img_area) > 0.99) {
             continue;
         }
-        cv::drawContours( img_contours, all_contours, (int)i, color, 2, cv::LINE_8, hierarchy, 0 );
+        // cv::drawContours( img_contours, all_contours, (int)i, color, 2, cv::LINE_8, hierarchy, 0 );
         contours_.push_back(all_contours.at(i));
     }
+    contours = contours_;
     return all_contours.size();
 }
 

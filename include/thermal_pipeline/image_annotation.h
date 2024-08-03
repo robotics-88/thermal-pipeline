@@ -24,6 +24,7 @@ class ImageAnnotator{
 
         ~ImageAnnotator();
 
+        void drawContours(const std::vector<std::vector<cv::Point> > &contours, cv::Mat &img);
         void addFlagIcon(const std::vector<cv::Point> &positions, const std::vector<geometry_msgs::Point> &gps_centers, cv::Mat &mat);
         bool alphaBlend(const cv::Point upper_left, const std::string label, cv::Mat &background, int index);
 
