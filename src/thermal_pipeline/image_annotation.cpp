@@ -23,7 +23,6 @@ ImageAnnotator::~ImageAnnotator() {
 }
 
 void ImageAnnotator::drawContours(const std::vector<std::vector<cv::Point> > &contours, cv::Mat &img) {
-    // cv::cvtColor(img, img, cv::COLOR_GRAY2BGR);
     cv::Scalar color = cv::Scalar( 0, 0, 255 );
     for ( size_t i = 0; i< contours.size(); i++ )
     {

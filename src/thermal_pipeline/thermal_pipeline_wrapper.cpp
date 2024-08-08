@@ -88,7 +88,6 @@ void ThermalWrapper::thermalImgCallback(const sensor_msgs::ImageConstPtr &img, c
         return;
     }
     image_annotator_.drawContours(thermal_contours, contour_mat);
-    // processSingleImage(thermal_mat, img_info, min, max, contour_mat, centers, projected_centers, thermal_contours);
 
     // Process secondary image
     std::vector<cv::Point3d> projected_centers2;
@@ -99,7 +98,6 @@ void ThermalWrapper::thermalImgCallback(const sensor_msgs::ImageConstPtr &img, c
     thermal_handler_.thermalContours(nir, min, second_model_, tmp_contours);
     transformContours(second_model_, second_img->header, tmp_contours, second_contours_map);
     image_annotator_.drawContours(tmp_contours, contour_mat2);
-    // processSingleImage(nir, second_img_info, min, max, contour_mat2, ignore, projected_centers2, second_contours);
 
     std::vector<int> indices;
     ros::Time t1 = ros::Time::now();
@@ -169,14 +167,6 @@ bool ThermalWrapper::transformContours(const image_geometry::PinholeCameraModel 
     }
     return true;
 }
-
-// void ThermalWrapper::processSingleImage(const cv::Mat &image, const sensor_msgs::CameraInfoConstPtr &img_info, double min, double max, cv::Mat &contour_image, std::vector<cv::Point> &centers, std::vector<cv::Point3d> &contour_centers) {
-//     // Get contours
-//     thermal_handler_.thermalContours(image, contour_image, min, max);
-
-//     // Get projected centers
-//     thermal_handler_.contourCenters(*img_info, centers, contour_centers);
-// }
 
 bool ThermalWrapper::transformCVPoint(const cv::Point3d point, const geometry_msgs::TransformStamped transform_image2map, const std_msgs::Header header, geometry_msgs::PointStamped &map_point) {
     geometry_msgs::PointStamped image_point_3d;
