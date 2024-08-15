@@ -45,7 +45,7 @@ void HotspotTracker::nirFilter(const std::vector<std::vector<geometry_msgs::Poin
         for (int jj = 0; jj < second_contours.size(); jj++) {
             std::vector<geometry_msgs::PointStamped> polygon2 = second_contours.at(jj);
             BgPolygon bg_poly2;
-            for (const auto &point2 : polygon_map) {
+            for (const auto &point2 : polygon2) {
                 BgPoint bgpoint(point2.point.x, point2.point.y);
                 bg_poly2.outer().push_back(bgpoint);
             }
