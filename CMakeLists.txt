@@ -107,6 +107,7 @@ add_library(thermal_pipeline
   src/thermal_pipeline/image_annotation.cpp
   src/thermal_pipeline/thermal_pipeline_wrapper.cpp
   src/thermal_pipeline/thermal_pipeline.cpp
+  src/thermal_pipeline/hotspot_tracker.cpp
 )
 
 ## Specify libraries to link a library or executable target against

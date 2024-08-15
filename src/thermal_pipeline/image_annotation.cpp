@@ -22,6 +22,14 @@ ImageAnnotator::ImageAnnotator(ros::NodeHandle& node)
 ImageAnnotator::~ImageAnnotator() {
 }
 
+void ImageAnnotator::drawContours(const std::vector<std::vector<cv::Point> > &contours, cv::Mat &img) {
+    cv::Scalar color = cv::Scalar( 0, 0, 255 );
+    for ( size_t i = 0; i< contours.size(); i++ )
+    {
+        cv::drawContours( img, contours, (int)i, color, 2, cv::LINE_8);
+    }
+}
+
 void ImageAnnotator::addFlagIcon(const std::vector<cv::Point> &positions, const std::vector<geometry_msgs::Point> &gps_centers, cv::Mat &mat) {
     cv::Mat foreground = cv::Mat::zeros(mat.size(), CV_8UC4);
     int flag_count = 0;
