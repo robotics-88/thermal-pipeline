@@ -1,35 +1,36 @@
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.5)
 project(thermal_88)
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
-  camera_calibration_parsers
-  cv_bridge
-  image_geometry
-  message_filters
-  messages_88
-  roslib
-  roscpp
-  rviz
-  sensor_msgs
-  std_msgs
-  tf2
-  tf2_msgs
-  tf2_ros
-  tf2_geometry_msgs
-)
+if(NOT CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+endif()
+if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_compile_options(-Wall -Wextra -Wpedantic)
+endif()
+
+find_package(ament_cmake REQUIRED)
+find_package(ament_index_cpp REQUIRED)
+find_package(rclcpp REQUIRED)
+
+find_package(camera_calibration_parsers REQUIRED)
+find_package(cv_bridge REQUIRED)
+find_package(image_geometry REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(message_filters REQUIRED)
+find_package(messages_88 REQUIRED)
+find_package(rviz2 REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(std_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 find_package(PCL REQUIRED)
 find_package(OpenCV REQUIRED)
 
-## Uncomment this if the package has a setup.py. This macro ensures
-## modules and global scripts declared therein get installed
-## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -51,41 +52,19 @@ find_package(OpenCV REQUIRED)
 #   cfg/DynReconf2.cfg
 # )
 
-###################################
-## catkin specific configuration ##
-###################################
-catkin_package(
-  CATKIN_DEPENDS
-    cv_bridge
-    image_geometry
-    messages_88
-    sensor_msgs
-    std_msgs
-    tf2
-    tf2_msgs
-    tf2_ros
-    tf2_geometry_msgs
-)
-
 ###########
 ## Build ##
 ###########
-# c++14 support required (11 not sufficient for pcl)
-include(CheckCXXCompilerFlag)
-check_cxx_compiler_flag("-std=c++14" COMPILER_SUPPORTS_CXX14)
-if(COMPILER_SUPPORTS_CXX14)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
-else()
-  message(FATAL_ERROR "The compiler ${CMAKE_CXX_COMPILER} has no C++14 support. Please use a different C++ compiler.")
-endif()
-
+include_directories(
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-    include
-    ${catkin_INCLUDE_DIRS}
-    ${OpenCV_INCLUDE_DIRS}
-	${PCL_INCLUDE_DIRS}
+  include
+  ${OpenCV_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
 )
 
 ## Add cmake target dependencies of the library
@@ -103,17 +82,31 @@ add_executable(thermal_wrapper_node src/thermal_pipeline/thermal_node.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ library
-add_library(thermal_pipeline
+add_library(thermal_pipeline SHARED
   src/thermal_pipeline/image_annotation.cpp
   src/thermal_pipeline/thermal_pipeline_wrapper.cpp
   src/thermal_pipeline/thermal_pipeline.cpp
   src/thermal_pipeline/hotspot_tracker.cpp
 )
 
+ament_target_dependencies(thermal_pipeline 
+  cv_bridge
+  image_geometry
+  geometry_msgs
+  message_filters
+  messages_88
+  rclcpp
+  std_msgs
+  sensor_msgs
+  tf2
+  tf2_ros
+  tf2_geometry_msgs
+  tf2_msgs
+)
+
 ## Specify libraries to link a library or executable target against
 target_link_libraries(thermal_wrapper_node
     thermal_pipeline
-    ${catkin_LIBRARIES}
     ${OpenCV_LIBRARIES}
 )
 
@@ -123,14 +116,21 @@ target_link_libraries(thermal_wrapper_node
 add_executable(thermal_calibrator_node src/calibration/calibrator_node.cpp)
 
 ## Declare a C++ library
-add_library(thermal_calibrator
+add_library(thermal_calibrator SHARED
   src/calibration/calibrator.cpp
+)
+
+ament_target_dependencies(thermal_calibrator 
+  cv_bridge
+  image_geometry
+  rclcpp
+  std_msgs
+  sensor_msgs
 )
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(thermal_calibrator_node
     thermal_calibrator
-    ${catkin_LIBRARIES}
     ${OpenCV_LIBRARIES}
 )
 
@@ -149,30 +149,38 @@ target_link_libraries(thermal_calibrator_node
 
 ## Mark libraries for installation
 ## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
-install(TARGETS thermal_wrapper_node
-  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
+install(TARGETS
+  thermal_wrapper_node
+  thermal_calibrator_node
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
+
+install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
 )
 
 #############
 ## Testing ##
 #############
-if(CATKIN_ENABLE_TESTING)
-  find_package(roslaunch REQUIRED)
+if(BUILD_TESTING)
+  
+  find_package(ament_cmake_gtest REQUIRED)
 
-  # test all launch files
-  roslaunch_add_file_check(launch)
+#   # test all launch files
+#   roslaunch_add_file_check(launch)
 
-  find_package(rostest REQUIRED)
+#   find_package(rostest REQUIRED)
 
-  add_rostest_gtest(tests_thermal
-    launch/test/tests_thermal.launch
-    src/thermal_pipeline/thermal_pipeline.cpp
-    test/tests_thermal_pipeline.cpp
-  )
-  target_link_libraries(tests_thermal 
-    ${catkin_LIBRARIES}
-    ${OpenCV_LIBRARIES}
-  )
+#   add_rostest_gtest(tests_thermal
+#     launch/test/tests_thermal.launch
+#     src/thermal_pipeline/thermal_pipeline.cpp
+#     test/tests_thermal_pipeline.cpp
+#   )
+#   target_link_libraries(tests_thermal 
+#     ${catkin_LIBRARIES}
+#     ${OpenCV_LIBRARIES}
+#   )
 endif()
+  
+ament_package()

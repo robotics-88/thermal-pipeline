@@ -8,9 +8,9 @@ Author: Erin Linebarger <erin@robotics88.com>
 
 #include <string>
 
-#include <ros/ros.h>
-#include <geometry_msgs/PointStamped.h>
-#include <geometry_msgs/Polygon.h>
+#include "rclcpp/rclcpp.hpp"
+#include <geometry_msgs/msg/point_stamped.hpp>
+#include <geometry_msgs/msg/polygon.hpp>
 
 
 namespace thermal_pipeline {
@@ -18,21 +18,17 @@ namespace thermal_pipeline {
  * @class HotspotTracker
  * @brief A class for filtering and storing hotspot detections
  */
-class HotspotTracker{
+class HotspotTracker {
     public:
-        HotspotTracker(ros::NodeHandle& node);
-
+        HotspotTracker();
         ~HotspotTracker();
 
-        void nirFilter(const std::vector<std::vector<geometry_msgs::PointStamped> > &thermal_contours, const std::vector<std::vector<geometry_msgs::PointStamped> > &second_contours, std::vector<int> &indices);
+        void nirFilter(const std::vector<std::vector<geometry_msgs::msg::PointStamped> > &thermal_contours, const std::vector<std::vector<geometry_msgs::msg::PointStamped> > &second_contours, std::vector<int> &indices);
 
     private:
-        ros::NodeHandle nh_;
-        ros::NodeHandle private_nh_;
-
         struct Hotspot {
-            geometry_msgs::Polygon contour;
-            ros::Time last_detection_;
+            geometry_msgs::msg::Polygon contour;
+            rclcpp::Time last_detection_;
             int num_detections_;
         };
 

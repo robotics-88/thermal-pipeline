@@ -9,9 +9,7 @@ Author: Erin Linebarger <erin@robotics88.com>
 
 namespace thermal_pipeline
 {
-Thermal::Thermal(ros::NodeHandle& node)
-    : nh_(node)
-    , private_nh_("~")
+Thermal::Thermal()
 {
 }
 

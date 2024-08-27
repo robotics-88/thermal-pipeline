@@ -5,18 +5,16 @@ Author: Erin Linebarger <erin@robotics88.com>
 
 #include "thermal_pipeline/image_annotation.h"
 
-#include <ros/package.h>
+#include <ament_index_cpp/get_package_share_directory.hpp>
 
 #include "opencv2/imgproc.hpp"
 #include <opencv2/imgcodecs.hpp>
 
 namespace thermal_pipeline
 {
-ImageAnnotator::ImageAnnotator(ros::NodeHandle& node)
-    : nh_(node)
-    , private_nh_("~")
+ImageAnnotator::ImageAnnotator()
 {
-    gps_icon_mat_ = cv::imread(ros::package::getPath("thermal_88") + "/images/geo-arrow.png", cv::IMREAD_UNCHANGED);
+    gps_icon_mat_ = cv::imread(ament_index_cpp::get_package_share_directory("thermal_88") + "/config/geo-arrow.png", cv::IMREAD_UNCHANGED);
 }
 
 ImageAnnotator::~ImageAnnotator() {
@@ -30,7 +28,7 @@ void ImageAnnotator::drawContours(const std::vector<std::vector<cv::Point> > &co
     }
 }
 
-void ImageAnnotator::addFlagIcon(const std::vector<cv::Point> &positions, const std::vector<geometry_msgs::Point> &gps_centers, cv::Mat &mat) {
+void ImageAnnotator::addFlagIcon(const std::vector<cv::Point> &positions, const std::vector<geometry_msgs::msg::Point> &gps_centers, cv::Mat &mat) {
     cv::Mat foreground = cv::Mat::zeros(mat.size(), CV_8UC4);
     int flag_count = 0;
     int flag_max = 2;

@@ -5,8 +5,6 @@ Author: Erin Linebarger <erin@robotics88.com>
 
 #include "thermal_pipeline/hotspot_tracker.h"
 
-#include <ros/package.h>
-
 #include "opencv2/imgproc.hpp"
 #include <opencv2/imgcodecs.hpp>
 
@@ -20,20 +18,18 @@ typedef bg::model::polygon<BgPoint> BgPolygon;
 
 namespace thermal_pipeline
 {
-HotspotTracker::HotspotTracker(ros::NodeHandle& node)
-    : nh_(node)
-    , private_nh_("~")
+HotspotTracker::HotspotTracker()
 {
 }
 
 HotspotTracker::~HotspotTracker() {
 }
 
-void HotspotTracker::nirFilter(const std::vector<std::vector<geometry_msgs::PointStamped> > &thermal_contours, const std::vector<std::vector<geometry_msgs::PointStamped> > &second_contours, std::vector<int> &indices) {
-    std::vector<std::vector<geometry_msgs::PointStamped> > filtered_contours;
+void HotspotTracker::nirFilter(const std::vector<std::vector<geometry_msgs::msg::PointStamped> > &thermal_contours, const std::vector<std::vector<geometry_msgs::msg::PointStamped> > &second_contours, std::vector<int> &indices) {
+    std::vector<std::vector<geometry_msgs::msg::PointStamped> > filtered_contours;
     // Remove any thermal contour without a corresponding NIR contour
     for (int ii = 0; ii < thermal_contours.size(); ii++) {
-        std::vector<geometry_msgs::PointStamped> polygon_map = thermal_contours.at(ii);
+        std::vector<geometry_msgs::msg::PointStamped> polygon_map = thermal_contours.at(ii);
         BgPolygon bg_poly;
         for (const auto &point : polygon_map) {
             BgPoint bgpoint(point.point.x, point.point.y);
@@ -43,7 +39,7 @@ void HotspotTracker::nirFilter(const std::vector<std::vector<geometry_msgs::Poin
         // double a = bg::area(bg_poly);
         // Find overlapping
         for (int jj = 0; jj < second_contours.size(); jj++) {
-            std::vector<geometry_msgs::PointStamped> polygon2 = second_contours.at(jj);
+            std::vector<geometry_msgs::msg::PointStamped> polygon2 = second_contours.at(jj);
             BgPolygon bg_poly2;
             for (const auto &point2 : polygon2) {
                 BgPoint bgpoint(point2.point.x, point2.point.y);

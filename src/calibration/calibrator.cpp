@@ -7,29 +7,36 @@ Author: Erin Linebarger <erin@robotics88.com>
 
 namespace thermal_pipeline
 {
-Calibrator::Calibrator(ros::NodeHandle& node)
-  : nh_(node)
-  , private_nh_("~")
+Calibrator::Calibrator(const rclcpp::NodeOptions& options)
+  : Node("callibrator", options)
+  , camera_name_("seek")
   , calibrate_threshold_(100)
 {
-    // Params
-    private_nh_.param("checkerboard_squares", checkerboard_num_, checkerboard_num_);
-    private_nh_.param("min_checkerboard", calibrate_threshold_, calibrate_threshold_);
-    std::string camera_name;
-    private_nh_.param("camera_name", camera_name, camera_name);
-
     // ROS setup
-    image_chessboard_pub_ = nh_.advertise<sensor_msgs::Image>(camera_name + "/image_chessboard", 10);
-    image_rect_pub_ = nh_.advertise<sensor_msgs::Image>(camera_name + "/image_rect", 10);
-    // info_pub_ = nh_.advertise<sensor_msgs::CameraInfo>(camera_name + "/camera_info", 10);
-    std::string sub_topic = camera_name + "/image_raw";
-    image_sub_ = nh_.subscribe<sensor_msgs::Image>(sub_topic, 10, &Calibrator::imageCallback, this);
+    initParams();
+
+    image_chessboard_pub_ = this->create_publisher<sensor_msgs::msg::Image>(camera_name_ + "/image_chessboard", 10);
+    image_rect_pub_ = this->create_publisher<sensor_msgs::msg::Image>(camera_name_ + "/image_rect", 10);
+    // info_pub_ = nh_.advertise<sensor_msgs::msg::CameraInfo>(camera_name + "/camera_info", 10);
+    std::string sub_topic = camera_name_ + "/image_raw";
+    image_sub_ = this->create_subscription<sensor_msgs::msg::Image>(sub_topic, 10, std::bind(&Calibrator::imageCallback, this, std::placeholders::_1));
 }
 
 Calibrator::~Calibrator() {
 }
 
-void Calibrator::imageCallback(const sensor_msgs::Image::ConstPtr &image) {
+void Calibrator::initParams() {
+    this->declare_parameter("checkerboard_squares", checkerboard_num_);
+    this->declare_parameter("min_checkerboard", calibrate_threshold_);
+    this->declare_parameter("camera_name", camera_name_);
+
+    // Params
+    this->get_parameter_or("checkerboard_squares", checkerboard_num_, checkerboard_num_);
+    this->get_parameter_or("min_checkerboard", calibrate_threshold_, calibrate_threshold_);
+    this->get_parameter_or("camera_name", camera_name_, camera_name_);
+}
+
+void Calibrator::imageCallback(const sensor_msgs::msg::Image::SharedPtr image) {
     if (first_image_) {
         img_rows_ = image->height;
         img_cols_ = image->width;
@@ -56,7 +63,8 @@ void Calibrator::imageCallback(const sensor_msgs::Image::ConstPtr &image) {
         image_rect_msg.header   = image->header; // Same timestamp and tf frame as input image
         image_rect_msg.encoding = sensor_msgs::image_encodings::MONO8;
         image_rect_msg.image    = rect;
-        image_rect_pub_.publish(image_rect_msg.toImageMsg());
+        image_rect_pub_->publish(*(image_rect_msg.toImageMsg()).get());
+        
 
         return;
     }
@@ -109,7 +117,7 @@ void Calibrator::imageCallback(const sensor_msgs::Image::ConstPtr &image) {
     chessboard_align_msg.header   = image->header; // Same timestamp and tf frame as input image
     chessboard_align_msg.encoding = sensor_msgs::image_encodings::BGR8;
     chessboard_align_msg.image    = frame;
-    image_chessboard_pub_.publish(chessboard_align_msg.toImageMsg());
+    image_chessboard_pub_->publish(*(chessboard_align_msg.toImageMsg()).get());
 
     if (calibrate_count_ > calibrate_threshold_) {
         if (!calibrated_) {
