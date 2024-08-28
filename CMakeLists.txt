@@ -138,17 +138,6 @@ target_link_libraries(thermal_calibrator_node
 ## Install ##
 #############
 
-# all install targets should use catkin DESTINATION variables
-# See http://ros.org/doc/api/catkin/html/adv_user_guide/variables.html
-
-## Mark executables for installation
-## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_executables.html
-# install(TARGETS ${PROJECT_NAME}_node
-#   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-# )
-
-## Mark libraries for installation
-## See http://docs.ros.org/melodic/api/catkin/html/howto/format1/building_libraries.html
 install(TARGETS
   thermal_wrapper_node
   thermal_calibrator_node
@@ -157,6 +146,10 @@ install(TARGETS
 )
 
 install(DIRECTORY launch
+  DESTINATION share/${PROJECT_NAME}
+)
+
+install(DIRECTORY config
   DESTINATION share/${PROJECT_NAME}
 )
 
@@ -182,5 +175,5 @@ if(BUILD_TESTING)
 #     ${OpenCV_LIBRARIES}
 #   )
 endif()
-  
+
 ament_package()
