@@ -11,5 +11,5 @@
         <param name="min_checkerboard" value="$(var min_checkerboard)"/>
     </node>
 
-    <node exec="rviz" name="calib_rviz" pkg="rviz2" args="-d $(find-pkg-share thermal_88)/config/calibrator.rviz"/>
+    <node exec="rviz2" name="calib_rviz" pkg="rviz2" args="-d $(find-pkg-share thermal_88)/config/calibrator.rviz"/>
 </launch>

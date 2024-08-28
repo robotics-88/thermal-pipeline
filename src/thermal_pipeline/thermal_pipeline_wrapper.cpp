@@ -18,12 +18,22 @@ ThermalWrapper::ThermalWrapper(const rclcpp::NodeOptions& options)
     , image_annotator_()
     , hotspot_tracker_()
 {
+}
+
+ThermalWrapper::~ThermalWrapper() {
+}
+
+void ThermalWrapper::initialize() {
     std::string thermal_topic = "/thermal_cam/image_rect_color";
     std::string info_topic = "/thermal_cam/camera_info";
-    this->get_parameter_or("image_topic", thermal_topic, thermal_topic);
-    this->get_parameter_or("camera_info_topic", info_topic, info_topic);
-    this->get_parameter_or("map_frame", map_frame_, map_frame_);
-    this->get_parameter_or("use_rviz", use_rviz_, use_rviz_);
+    this->declare_parameter("image_topic", thermal_topic);
+    this->declare_parameter("camera_info_topic", info_topic);
+    this->declare_parameter("map_frame", map_frame_);
+    this->declare_parameter("use_rviz", use_rviz_);
+    this->get_parameter("image_topic", thermal_topic);
+    this->get_parameter("camera_info_topic", info_topic);
+    this->get_parameter("map_frame", map_frame_);
+    this->get_parameter("use_rviz", use_rviz_);
 
     tf_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
     tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
@@ -37,7 +47,7 @@ ThermalWrapper::ThermalWrapper(const rclcpp::NodeOptions& options)
     secondary_cam_subscriber_.subscribe(this, "/mapir_rgb/image_raw", rmw_qos_profile);
     secondary_info_subscriber_.subscribe(this, "/mapir_rgb/camera_info", rmw_qos_profile);
 
-    sync_ = std::make_shared<message_filters::TimeSynchronizer<sensor_msgs::msg::Image, sensor_msgs::msg::CameraInfo, sensor_msgs::msg::Image, sensor_msgs::msg::CameraInfo>>(thermal_cam_subscriber_, thermal_info_subscriber_, secondary_cam_subscriber_, secondary_info_subscriber_, 10);
+    sync_.reset(new message_filters::Synchronizer<approximate_policy>(approximate_policy(30), thermal_cam_subscriber_, thermal_info_subscriber_, secondary_cam_subscriber_, secondary_info_subscriber_));
     sync_->registerCallback(std::bind(&ThermalWrapper::thermalImgCallback,
                                              this,
                                              std::placeholders::_1,
@@ -51,13 +61,11 @@ ThermalWrapper::ThermalWrapper(const rclcpp::NodeOptions& options)
     thermal_flagged_pub_ = this->create_publisher<sensor_msgs::msg::Image>("/thermal_flagged", 10);
 }
 
-ThermalWrapper::~ThermalWrapper() {
-}
-
-void ThermalWrapper::thermalImgCallback(const sensor_msgs::msg::Image::ConstSharedPtr &img, const sensor_msgs::msg::CameraInfo::ConstSharedPtr &img_info, const sensor_msgs::msg::Image::ConstSharedPtr &second_img, const sensor_msgs::msg::CameraInfo::ConstSharedPtr &second_img_info) {
+void ThermalWrapper::thermalImgCallback(const sensor_msgs::msg::Image::ConstSharedPtr img, const sensor_msgs::msg::CameraInfo::ConstSharedPtr img_info, const sensor_msgs::msg::Image::ConstSharedPtr second_img, const sensor_msgs::msg::CameraInfo::ConstSharedPtr second_img_info) {
     if (!camera_model_set_) {
         thermal_model_.fromCameraInfo(img_info);
         second_model_.fromCameraInfo(second_img_info);
+        camera_model_set_ = true;
     }
     // Convert image to cv Mat
     cv_bridge::CvImagePtr cv_ptr; 
@@ -92,6 +100,7 @@ void ThermalWrapper::thermalImgCallback(const sensor_msgs::msg::Image::ConstShar
     thermal_handler_.thermalContours(thermal_mat, min, thermal_model_, thermal_contours);
     bool got_tf = transformContours(thermal_model_, img->header, thermal_contours, thermal_contours_map);
     if (!got_tf) {
+        std::cout << "Thermal pipeline stopped, no TF for contours" << std::endl;
         return;
     }
     image_annotator_.drawContours(thermal_contours, contour_mat);
@@ -118,6 +127,7 @@ void ThermalWrapper::thermalImgCallback(const sensor_msgs::msg::Image::ConstShar
     std::vector<geometry_msgs::msg::Point> gps_centers;
     bool did_transform = getImagePointsInGPS(projected_centers, img->header, gps_centers);
     if (!did_transform) {
+        std::cout << "Thermal pipeline stopped, no TF for GPS flags" << std::endl;
         return;
     }
 

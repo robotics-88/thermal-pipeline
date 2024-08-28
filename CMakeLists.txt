@@ -139,7 +139,9 @@ target_link_libraries(thermal_calibrator_node
 #############
 
 install(TARGETS
+  thermal_pipeline
   thermal_wrapper_node
+  thermal_calibrator
   thermal_calibrator_node
   LIBRARY DESTINATION lib
   RUNTIME DESTINATION lib/${PROJECT_NAME}
