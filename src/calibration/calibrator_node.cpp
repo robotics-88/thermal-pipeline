@@ -7,16 +7,13 @@ Author: Erin Linebarger <erin@robotics88.com>
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "thermal_calibrator");
-  if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME,
-                                     ros::console::levels::Debug)) {
-    ros::console::notifyLoggerLevelsChanged();
-  }
+  rclcpp::init(argc, argv);
 
-  ros::NodeHandle node;
-  thermal_pipeline::Calibrator calibrator(node);
-
-  ros::spin();
-
+  auto tm_node = std::make_shared<thermal_pipeline::Calibrator>();
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(tm_node);
+  executor.spin();
+  
+  rclcpp::shutdown();
   return 0;
 }

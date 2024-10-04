@@ -8,10 +8,10 @@ Author: Erin Linebarger <erin@robotics88.com>
 
 #include <string>
 
-#include <ros/ros.h>
+#include "rclcpp/rclcpp.hpp"
 
-#include <sensor_msgs/Image.h>
-#include <sensor_msgs/CameraInfo.h>
+#include <sensor_msgs/msg/image.hpp>
+#include <sensor_msgs/msg/camera_info.hpp>
 
 // OpenCV includes
 #include <cv_bridge/cv_bridge.h>
@@ -25,26 +25,23 @@ namespace thermal_pipeline {
  * @class Calibrator
  * @brief A class for converting images with bounding boxes on detected species into maps
  */
-class Calibrator {
+class Calibrator : public rclcpp::Node {
     public:
-        Calibrator(ros::NodeHandle& node);
-
+        explicit Calibrator(const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
         ~Calibrator();
 
-        void imageCallback(const sensor_msgs::Image::ConstPtr &image);
+        void imageCallback(const sensor_msgs::msg::Image::SharedPtr image);
 
     private:
-        ros::NodeHandle nh_;
-        ros::NodeHandle private_nh_;
-
-        ros::Subscriber image_sub_;
+        rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_sub_;
         bool first_image_ = true;
 
-        ros::Publisher image_chessboard_pub_;
-        ros::Publisher image_rect_pub_;
-        ros::Publisher info_pub_;
+        rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_chessboard_pub_;
+        rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_rect_pub_;
+        rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr info_pub_;
 
-        sensor_msgs::CameraInfo camera_info_;
+        std::string camera_name_;
+        sensor_msgs::msg::CameraInfo camera_info_;
 
         // Calibration objects
 
@@ -64,6 +61,7 @@ class Calibrator {
 
         cv::Mat cameraMatrix, distCoeffs, optimal_mat;
 
+        void initParams();
         void cornersFromTop(const std::vector<cv::Point2f> &corners, std::vector<cv::Point2f> &corners_corrected);
         void calibrate();
         void reprojectionErrors();

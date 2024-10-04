@@ -7,16 +7,15 @@ Author: Erin Linebarger <erin@robotics88.com>
 
 int main(int argc, char** argv)
 {
-  ros::init(argc, argv, "thermal_pipeline");
-  if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME,
-                                     ros::console::levels::Debug)) {
-    ros::console::notifyLoggerLevelsChanged();
-  }
+  rclcpp::init(argc, argv);
 
-  ros::NodeHandle node;
-  thermal_pipeline::ThermalWrapper thermal(node);
+  auto tm_node = std::make_shared<thermal_pipeline::ThermalWrapper>();
+  tm_node->initialize();
 
-  ros::spin();
-
+  rclcpp::executors::SingleThreadedExecutor executor;
+  executor.add_node(tm_node);
+  executor.spin();
+  
+  rclcpp::shutdown();
   return 0;
 }
