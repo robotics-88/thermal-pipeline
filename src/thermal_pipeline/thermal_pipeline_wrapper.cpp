@@ -100,7 +100,7 @@ void ThermalWrapper::thermalImgCallback(const sensor_msgs::msg::Image::ConstShar
     thermal_handler_.thermalContours(thermal_mat, min, thermal_model_, thermal_contours);
     bool got_tf = transformContours(thermal_model_, img->header, thermal_contours, thermal_contours_map);
     if (!got_tf) {
-        std::cout << "Thermal pipeline stopped, no TF for contours" << std::endl;
+        RCLCPP_INFO(this->get_logger(), "Thermal pipeline stopped, no TF for contours");
         return;
     }
     image_annotator_.drawContours(thermal_contours, contour_mat);
@@ -127,7 +127,7 @@ void ThermalWrapper::thermalImgCallback(const sensor_msgs::msg::Image::ConstShar
     std::vector<geometry_msgs::msg::Point> gps_centers;
     bool did_transform = getImagePointsInGPS(projected_centers, img->header, gps_centers);
     if (!did_transform) {
-        std::cout << "Thermal pipeline stopped, no TF for GPS flags" << std::endl;
+        RCLCPP_INFO(this->get_logger(), "Thermal pipeline stopped, no TF for GPS flags");
         return;
     }
 
@@ -167,7 +167,7 @@ bool ThermalWrapper::transformContours(const image_geometry::PinholeCameraModel 
         transform_thermal2map = tf_buffer_->lookupTransform(map_frame_, header.frame_id, header.stamp);
     }
     catch (tf2::TransformException &ex) {
-        std::cout << ex.what() << std::endl;
+        RCLCPP_INFO(this->get_logger(), "Transform for contours failed with %s", ex.what());
         return false;
     }
     for (int ii = 0; ii < contours.size(); ii++) {
@@ -203,7 +203,7 @@ bool ThermalWrapper::getImagePointsInGPS(const std::vector<cv::Point3d> &centers
         transform_image2map = tf_buffer_->lookupTransform(map_frame_, header.frame_id, header.stamp);
     }
     catch (tf2::TransformException &ex) {
-        std::cout << ex.what() << std::endl;
+        RCLCPP_INFO(this->get_logger(), "Transform for image points failed with %s", ex.what());
         return false;
     }
     for (int i = 0; i < centers.size(); i++) {

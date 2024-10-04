@@ -63,20 +63,12 @@ class ThermalWrapper : public rclcpp::Node {
         image_geometry::PinholeCameraModel thermal_model_;
         image_geometry::PinholeCameraModel second_model_;
 
-        // std::shared_ptr<message_filters::TimeSynchronizer<sensor_msgs::msg::Temperature, sensor_msgs::msg::Temperature>> temp_sync_;
-        // typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Image, sensor_msgs::msg::CameraInfo, sensor_msgs::msg::Image, sensor_msgs::msg::CameraInfo> MySyncPolicy;
-        // typedef message_filters::Synchronizer<MySyncPolicy> Sync;
-        // boost::shared_ptr<Sync> sync_;
-        // typedef message_filters::Synchronizer<message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Image, sensor_msgs::msg::CameraInfo, sensor_msgs::msg::Image, sensor_msgs::msg::CameraInfo>> Sync;
-        // Sync sync_;
         using approximate_policy = message_filters::sync_policies::ApproximateTime<sensor_msgs::msg::Image, sensor_msgs::msg::CameraInfo, sensor_msgs::msg::Image, sensor_msgs::msg::CameraInfo>;
         typedef message_filters::Synchronizer<approximate_policy> Synchronizer;
         std::unique_ptr<Synchronizer> sync_;
 
         void thermalImgCallback(const sensor_msgs::msg::Image::ConstSharedPtr img, const sensor_msgs::msg::CameraInfo::ConstSharedPtr img_info, const sensor_msgs::msg::Image::ConstSharedPtr second_img, const sensor_msgs::msg::CameraInfo::ConstSharedPtr second_img_info);
         bool transformContours(const image_geometry::PinholeCameraModel model, const std_msgs::msg::Header header, const std::vector<std::vector<cv::Point> > &contours, std::vector<std::vector<geometry_msgs::msg::PointStamped> > &map_contours);
-        // void mapContoursToImage();
-        // void processSingleImage(const cv::Mat &image, const sensor_msgs::msg::CameraInfoConstPtr &img_info, double min, double max, cv::Mat &contour_image, std::vector<cv::Point> &centers, std::vector<cv::Point3d> &contour_centers);
         bool getImagePointsInGPS(const std::vector<cv::Point3d> &centers, const std_msgs::msg::Header &header, std::vector<geometry_msgs::msg::Point> &gps_centers);
         bool transformCVPoint(const cv::Point3d point, const geometry_msgs::msg::TransformStamped transform_image2map, std_msgs::msg::Header header, geometry_msgs::msg::PointStamped &map_point);
 };

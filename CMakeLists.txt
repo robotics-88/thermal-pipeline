@@ -55,10 +55,6 @@ find_package(OpenCV REQUIRED)
 ###########
 ## Build ##
 ###########
-include_directories(
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
-)
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(

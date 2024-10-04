@@ -110,7 +110,7 @@ void Calibrator::imageCallback(const sensor_msgs::msg::Image::SharedPtr image) {
         float percent_complete = 100.0 * ((float) calibrate_count_ )/ ((float) calibrate_threshold_);
         int perc = (int) percent_complete;
         if (perc % 10 == 0) {
-            std::cout << perc << " percent calibrated..." << std::endl;
+            RCLCPP_INFO(this->get_logger(), "%f percent calibrated...", perc);
         }
     }
     cv_bridge::CvImage chessboard_align_msg;
