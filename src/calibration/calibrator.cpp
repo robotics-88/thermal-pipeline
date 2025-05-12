@@ -5,25 +5,23 @@ Author: Erin Linebarger <erin@robotics88.com>
 
 #include "calibration/calibrator.h"
 
-namespace thermal_pipeline
-{
-Calibrator::Calibrator(const rclcpp::NodeOptions& options)
-  : Node("callibrator", options)
-  , camera_name_("seek")
-  , calibrate_threshold_(100)
-{
+namespace thermal_pipeline {
+Calibrator::Calibrator(const rclcpp::NodeOptions &options)
+    : Node("callibrator", options), camera_name_("seek"), calibrate_threshold_(100) {
     // ROS setup
     initParams();
 
-    image_chessboard_pub_ = this->create_publisher<sensor_msgs::msg::Image>(camera_name_ + "/image_chessboard", 10);
-    image_rect_pub_ = this->create_publisher<sensor_msgs::msg::Image>(camera_name_ + "/image_rect", 10);
+    image_chessboard_pub_ =
+        this->create_publisher<sensor_msgs::msg::Image>(camera_name_ + "/image_chessboard", 10);
+    image_rect_pub_ =
+        this->create_publisher<sensor_msgs::msg::Image>(camera_name_ + "/image_rect", 10);
     // info_pub_ = nh_.advertise<sensor_msgs::msg::CameraInfo>(camera_name + "/camera_info", 10);
     std::string sub_topic = camera_name_ + "/image_raw";
-    image_sub_ = this->create_subscription<sensor_msgs::msg::Image>(sub_topic, 10, std::bind(&Calibrator::imageCallback, this, std::placeholders::_1));
+    image_sub_ = this->create_subscription<sensor_msgs::msg::Image>(
+        sub_topic, 10, std::bind(&Calibrator::imageCallback, this, std::placeholders::_1));
 }
 
-Calibrator::~Calibrator() {
-}
+Calibrator::~Calibrator() {}
 
 void Calibrator::initParams() {
     this->declare_parameter("checkerboard_squares", checkerboard_num_);
@@ -43,13 +41,15 @@ void Calibrator::imageCallback(const sensor_msgs::msg::Image::SharedPtr image) {
         first_image_ = false;
     }
 
-    cv_bridge::CvImagePtr cv_ptr; 
-    cv_ptr = cv_bridge::toCvCopy(image, sensor_msgs::image_encodings::BGRA8); 
+    cv_bridge::CvImagePtr cv_ptr;
+    cv_ptr = cv_bridge::toCvCopy(image, sensor_msgs::image_encodings::BGRA8);
     cv::Mat mat_thermal;
     mat_thermal = cv_ptr->image;
     cv::cvtColor(mat_thermal, mat_thermal, cv::COLOR_BGRA2GRAY);
 
-    cv::equalizeHist(mat_thermal, mat_thermal); // TODO, is this helping or hurting? improves ability to detect the chessboard, but does it make calibration worse?
+    cv::equalizeHist(mat_thermal,
+                     mat_thermal); // TODO, is this helping or hurting? improves ability to detect
+                                   // the chessboard, but does it make calibration worse?
 
     if (calibrated_) {
         // TODO something weird is happening in undistort, compare with ROS calibrator
@@ -57,66 +57,66 @@ void Calibrator::imageCallback(const sensor_msgs::msg::Image::SharedPtr image) {
         cv::Mat mapx, mapy;
         // mat_thermal.convertTo(mat_thermal, CV_32FC1);
         // cv::undistort(mat_thermal, rect, cameraMatrix, distCoeffs);
-        cv::initUndistortRectifyMap(cameraMatrix, distCoeffs, cv::Mat::eye(cv::Size(3,3), CV_64FC1), optimal_mat, cv::Size(img_cols_, img_rows_), CV_32FC1, mapx, mapy);
+        cv::initUndistortRectifyMap(cameraMatrix, distCoeffs,
+                                    cv::Mat::eye(cv::Size(3, 3), CV_64FC1), optimal_mat,
+                                    cv::Size(img_cols_, img_rows_), CV_32FC1, mapx, mapy);
         cv::remap(mat_thermal, rect, mapx, mapy, CV_INTER_LINEAR);
         cv_bridge::CvImage image_rect_msg;
-        image_rect_msg.header   = image->header; // Same timestamp and tf frame as input image
+        image_rect_msg.header = image->header; // Same timestamp and tf frame as input image
         image_rect_msg.encoding = sensor_msgs::image_encodings::MONO8;
-        image_rect_msg.image    = rect;
+        image_rect_msg.image = rect;
         image_rect_pub_->publish(*(image_rect_msg.toImageMsg()).get());
-        
 
         return;
     }
 
-
     // Defining the world coordinates for 3D points
     std::vector<cv::Point3f> objp;
-    for(int i{0}; i<checkerboard_rows_; i++)
-    {
-        for(int j{0}; j<checkerboard_cols_; j++)
-            objp.push_back(cv::Point3f(j,i,0));
+    for (int i{0}; i < checkerboard_rows_; i++) {
+        for (int j{0}; j < checkerboard_cols_; j++)
+            objp.push_back(cv::Point3f(j, i, 0));
     }
-    
-    
+
     cv::Mat frame;
-    // vector to store the pixel coordinates of detected checker board corners 
+    // vector to store the pixel coordinates of detected checker board corners
     std::vector<cv::Point2f> corner_pts, corrected_corners;
     bool success;
-    
-    cv::cvtColor(mat_thermal,frame,cv::COLOR_GRAY2BGR);
+
+    cv::cvtColor(mat_thermal, frame, cv::COLOR_GRAY2BGR);
 
     // Finding checker board corners
-    // If desired number of corners are found in the image then success = true  
-    success = cv::findChessboardCorners(frame, cv::Size(checkerboard_cols_, checkerboard_rows_), corner_pts, cv::CALIB_CB_ADAPTIVE_THRESH);
-    
-    /* 
-    * If desired number of corner are detected,
-    * we refine the pixel coordinates and display 
-    * them on the images of checker board
-    */
-    if(success)
-    {
-        
+    // If desired number of corners are found in the image then success = true
+    success = cv::findChessboardCorners(frame, cv::Size(checkerboard_cols_, checkerboard_rows_),
+                                        corner_pts, cv::CALIB_CB_ADAPTIVE_THRESH);
+
+    /*
+     * If desired number of corner are detected,
+     * we refine the pixel coordinates and display
+     * them on the images of checker board
+     */
+    if (success) {
+
         // refining pixel coordinates for given 2d points.
-        cv::cornerSubPix(mat_thermal, corner_pts, cv::Size(11, 11), cv::Size(-1, -1), cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.001));
-        
+        cv::cornerSubPix(mat_thermal, corner_pts, cv::Size(11, 11), cv::Size(-1, -1),
+                         cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.001));
+
         // Displaying the detected corner points on the checker board
-        cv::drawChessboardCorners(frame, cv::Size(checkerboard_cols_, checkerboard_rows_), corner_pts, success);
-        
+        cv::drawChessboardCorners(frame, cv::Size(checkerboard_cols_, checkerboard_rows_),
+                                  corner_pts, success);
+
         objpoints.push_back(objp);
         imgpoints.push_back(corner_pts);
         calibrate_count_++;
-        float percent_complete = 100.0 * ((float) calibrate_count_ )/ ((float) calibrate_threshold_);
-        int perc = (int) percent_complete;
+        float percent_complete = 100.0 * ((float)calibrate_count_) / ((float)calibrate_threshold_);
+        int perc = (int)percent_complete;
         if (perc % 10 == 0) {
             RCLCPP_INFO(this->get_logger(), "%f percent calibrated...", perc);
         }
     }
     cv_bridge::CvImage chessboard_align_msg;
-    chessboard_align_msg.header   = image->header; // Same timestamp and tf frame as input image
+    chessboard_align_msg.header = image->header; // Same timestamp and tf frame as input image
     chessboard_align_msg.encoding = sensor_msgs::image_encodings::BGR8;
-    chessboard_align_msg.image    = frame;
+    chessboard_align_msg.image = frame;
     image_chessboard_pub_->publish(*(chessboard_align_msg.toImageMsg()).get());
 
     if (calibrate_count_ > calibrate_threshold_) {
@@ -128,18 +128,21 @@ void Calibrator::imageCallback(const sensor_msgs::msg::Image::SharedPtr image) {
 
 void Calibrator::calibrate() {
     /*
-    * Performing camera calibration by 
-    * passing the value of known 3D points (objpoints)
-    * and corresponding pixel coordinates of the 
-    * detected corners (imgpoints)
-    */
-    cv::Mat R,T;
-    cv::calibrateCamera(objpoints, imgpoints, cv::Size(img_cols_, img_rows_), cameraMatrix, distCoeffs, R, T);
-    
+     * Performing camera calibration by
+     * passing the value of known 3D points (objpoints)
+     * and corresponding pixel coordinates of the
+     * detected corners (imgpoints)
+     */
+    cv::Mat R, T;
+    cv::calibrateCamera(objpoints, imgpoints, cv::Size(img_cols_, img_rows_), cameraMatrix,
+                        distCoeffs, R, T);
+
     std::cout << "cameraMatrix : " << cameraMatrix << std::endl;
     std::cout << "distCoeffs : " << distCoeffs << std::endl;
 
-    optimal_mat = cv::getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, cv::Size(img_cols_, img_rows_), 0, cv::Size(img_cols_, img_rows_));
+    optimal_mat =
+        cv::getOptimalNewCameraMatrix(cameraMatrix, distCoeffs, cv::Size(img_cols_, img_rows_), 0,
+                                      cv::Size(img_cols_, img_rows_));
     std::cout << "P matrix : " << optimal_mat << std::endl;
     calibrated_ = true;
 }
@@ -150,7 +153,7 @@ void Calibrator::calibrate() {
 //     size_t totalPoints = 0;
 //     double totalErr = 0, err;
 //     perViewErrors.resize(objpoints.size());
-    
+
 //     for(size_t i = 0; i < objpoints.size(); ++i )
 //     {
 //     // if (fisheye)
@@ -164,4 +167,4 @@ void Calibrator::calibrate() {
 //     // }
 //     err = norm(imgpoints[i], imagePoints2, cv::NORM_L2);
 //  }
-}
+} // namespace thermal_pipeline

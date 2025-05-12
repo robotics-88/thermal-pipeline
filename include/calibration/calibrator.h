@@ -1,6 +1,6 @@
-/* 
+/*
 © 2024 Robotics 88
-Author: Erin Linebarger <erin@robotics88.com> 
+Author: Erin Linebarger <erin@robotics88.com>
 */
 
 #ifndef THERMAL_CALIBRATOR_H_
@@ -10,15 +10,15 @@ Author: Erin Linebarger <erin@robotics88.com>
 
 #include "rclcpp/rclcpp.hpp"
 
-#include <sensor_msgs/msg/image.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
+#include <sensor_msgs/msg/image.hpp>
 
 // OpenCV includes
 #include <cv_bridge/cv_bridge.h>
-#include <opencv2/opencv.hpp>
 #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/opencv.hpp>
 
 namespace thermal_pipeline {
 /**
@@ -26,47 +26,48 @@ namespace thermal_pipeline {
  * @brief A class for converting images with bounding boxes on detected species into maps
  */
 class Calibrator : public rclcpp::Node {
-    public:
-        explicit Calibrator(const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
-        ~Calibrator();
+  public:
+    explicit Calibrator(const rclcpp::NodeOptions &options = rclcpp::NodeOptions());
+    ~Calibrator();
 
-        void imageCallback(const sensor_msgs::msg::Image::SharedPtr image);
+    void imageCallback(const sensor_msgs::msg::Image::SharedPtr image);
 
-    private:
-        rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_sub_;
-        bool first_image_ = true;
+  private:
+    rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_sub_;
+    bool first_image_ = true;
 
-        rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_chessboard_pub_;
-        rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_rect_pub_;
-        rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr info_pub_;
+    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_chessboard_pub_;
+    rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_rect_pub_;
+    rclcpp::Publisher<sensor_msgs::msg::CameraInfo>::SharedPtr info_pub_;
 
-        std::string camera_name_;
-        sensor_msgs::msg::CameraInfo camera_info_;
+    std::string camera_name_;
+    sensor_msgs::msg::CameraInfo camera_info_;
 
-        // Calibration objects
+    // Calibration objects
 
-        // Creating vector to store vectors of 3D points for each checkerboard image
-        std::vector<std::vector<cv::Point3f> > objpoints;
+    // Creating vector to store vectors of 3D points for each checkerboard image
+    std::vector<std::vector<cv::Point3f>> objpoints;
 
-        // Creating vector to store vectors of 2D points for each checkerboard image
-        std::vector<std::vector<cv::Point2f> > imgpoints;
+    // Creating vector to store vectors of 2D points for each checkerboard image
+    std::vector<std::vector<cv::Point2f>> imgpoints;
 
-        int img_rows_, img_cols_;
-        int checkerboard_num_ = 7;
-        int checkerboard_rows_ = 3;
-        int checkerboard_cols_ = 5;
-        int calibrate_count_ = 0;
-        int calibrate_threshold_;
-        bool calibrated_ = false;
+    int img_rows_, img_cols_;
+    int checkerboard_num_ = 7;
+    int checkerboard_rows_ = 3;
+    int checkerboard_cols_ = 5;
+    int calibrate_count_ = 0;
+    int calibrate_threshold_;
+    bool calibrated_ = false;
 
-        cv::Mat cameraMatrix, distCoeffs, optimal_mat;
+    cv::Mat cameraMatrix, distCoeffs, optimal_mat;
 
-        void initParams();
-        void cornersFromTop(const std::vector<cv::Point2f> &corners, std::vector<cv::Point2f> &corners_corrected);
-        void calibrate();
-        void reprojectionErrors();
+    void initParams();
+    void cornersFromTop(const std::vector<cv::Point2f> &corners,
+                        std::vector<cv::Point2f> &corners_corrected);
+    void calibrate();
+    void reprojectionErrors();
 };
 
-}
+} // namespace thermal_pipeline
 
 #endif

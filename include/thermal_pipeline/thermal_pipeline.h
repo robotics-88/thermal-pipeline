@@ -1,6 +1,6 @@
-/* 
+/*
 © 2024 Robotics 88
-Author: Erin Linebarger <erin@robotics88.com> 
+Author: Erin Linebarger <erin@robotics88.com>
 */
 
 #ifndef THERMAL_PIPELINE_H_
@@ -22,19 +22,24 @@ namespace thermal_pipeline {
  * @brief A class for processing thermal imagery
  */
 class Thermal {
-    public:
-        Thermal();
-        ~Thermal();
+  public:
+    Thermal();
+    ~Thermal();
 
-        void convertToGray(cv::Mat &img);
-        int thermalContours(const cv::Mat &img, const double min, const image_geometry::PinholeCameraModel model, std::vector<std::vector<cv::Point> > &contours);
-        void contourCenters(const image_geometry::PinholeCameraModel model, std::vector<cv::Point> &centers, std::vector<cv::Point3d> &projected_centers);
-        void projectContour(const image_geometry::PinholeCameraModel model, const std::vector<cv::Point> &contour, std::vector<cv::Point3d> &projected_contour);
+    void convertToGray(cv::Mat &img);
+    int thermalContours(const cv::Mat &img, const double min,
+                        const image_geometry::PinholeCameraModel model,
+                        std::vector<std::vector<cv::Point>> &contours);
+    void contourCenters(const image_geometry::PinholeCameraModel model,
+                        std::vector<cv::Point> &centers,
+                        std::vector<cv::Point3d> &projected_centers);
+    void projectContour(const image_geometry::PinholeCameraModel model,
+                        const std::vector<cv::Point> &contour,
+                        std::vector<cv::Point3d> &projected_contour);
 
-    private:
-        std::vector<std::vector<cv::Point> > contours_;
-
+  private:
+    std::vector<std::vector<cv::Point>> contours_;
 };
-}
+} // namespace thermal_pipeline
 
 #endif

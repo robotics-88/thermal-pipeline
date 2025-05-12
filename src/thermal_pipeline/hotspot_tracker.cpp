@@ -1,6 +1,6 @@
-/* 
+/*
 © 2024 Robotics 88
-Author: Erin Linebarger <erin@robotics88.com> 
+Author: Erin Linebarger <erin@robotics88.com>
 */
 
 #include "thermal_pipeline/hotspot_tracker.h"
@@ -16,17 +16,16 @@ namespace bg = boost::geometry;
 typedef bg::model::d2::point_xy<double> BgPoint;
 typedef bg::model::polygon<BgPoint> BgPolygon;
 
-namespace thermal_pipeline
-{
-HotspotTracker::HotspotTracker()
-{
-}
+namespace thermal_pipeline {
+HotspotTracker::HotspotTracker() {}
 
-HotspotTracker::~HotspotTracker() {
-}
+HotspotTracker::~HotspotTracker() {}
 
-void HotspotTracker::nirFilter(const std::vector<std::vector<geometry_msgs::msg::PointStamped> > &thermal_contours, const std::vector<std::vector<geometry_msgs::msg::PointStamped> > &second_contours, std::vector<int> &indices) {
-    std::vector<std::vector<geometry_msgs::msg::PointStamped> > filtered_contours;
+void HotspotTracker::nirFilter(
+    const std::vector<std::vector<geometry_msgs::msg::PointStamped>> &thermal_contours,
+    const std::vector<std::vector<geometry_msgs::msg::PointStamped>> &second_contours,
+    std::vector<int> &indices) {
+    std::vector<std::vector<geometry_msgs::msg::PointStamped>> filtered_contours;
     // Remove any thermal contour without a corresponding NIR contour
     for (int ii = 0; ii < thermal_contours.size(); ii++) {
         std::vector<geometry_msgs::msg::PointStamped> polygon_map = thermal_contours.at(ii);
@@ -56,4 +55,4 @@ void HotspotTracker::nirFilter(const std::vector<std::vector<geometry_msgs::msg:
     }
 }
 
-}
+} // namespace thermal_pipeline
