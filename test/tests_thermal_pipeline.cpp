@@ -2,8 +2,7 @@
 
 #include <gtest/gtest.h>
 
-TEST(ColorConverter, convertColor)
-{
+TEST(ColorConverter, convertColor) {
     ros::NodeHandle node;
     thermal_pipeline::Thermal thermal(node);
 
@@ -13,8 +12,7 @@ TEST(ColorConverter, convertColor)
     EXPECT_EQ(type, 0);
 }
 
-TEST(ThermalContour, thermalContour)
-{
+TEST(ThermalContour, thermalContour) {
     ros::NodeHandle node;
     thermal_pipeline::Thermal thermal(node);
 
@@ -26,7 +24,8 @@ TEST(ThermalContour, thermalContour)
     int endY = 75;
 
     // Add a white filled rectangle in the center
-    cv::rectangle(img, cv::Point(startX, startY), cv::Point(endX, endY), CV_RGB(255, 255, 255), cv::FILLED);
+    cv::rectangle(img, cv::Point(startX, startY), cv::Point(endX, endY), CV_RGB(255, 255, 255),
+                  cv::FILLED);
 
     // Get contours
     thermal.convertToGray(img);
@@ -38,13 +37,12 @@ TEST(ThermalContour, thermalContour)
 }
 
 // Run all the tests that were declared with TEST()
-int main(int argc, char **argv){
-  testing::InitGoogleTest(&argc, argv);
-  ros::init(argc, argv, "tester");
-  if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME,
-                                     ros::console::levels::Debug)) {
-    ros::console::notifyLoggerLevelsChanged();
-  }
-  ros::NodeHandle nh;
-  return RUN_ALL_TESTS();
+int main(int argc, char **argv) {
+    testing::InitGoogleTest(&argc, argv);
+    ros::init(argc, argv, "tester");
+    if (ros::console::set_logger_level(ROSCONSOLE_DEFAULT_NAME, ros::console::levels::Debug)) {
+        ros::console::notifyLoggerLevelsChanged();
+    }
+    ros::NodeHandle nh;
+    return RUN_ALL_TESTS();
 }
