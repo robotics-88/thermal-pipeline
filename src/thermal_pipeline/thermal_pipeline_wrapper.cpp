@@ -15,7 +15,8 @@ ThermalWrapper::ThermalWrapper(const rclcpp::NodeOptions &options)
       use_rviz_(true),
       thermal_handler_(),
       image_annotator_(),
-      hotspot_tracker_() {}
+      hotspot_tracker_(),
+      is_active_(false) {}
 
 ThermalWrapper::~ThermalWrapper() {}
 
@@ -56,13 +57,48 @@ void ThermalWrapper::initialize() {
     filtered_contour_pub_ =
         this->create_publisher<sensor_msgs::msg::Image>("/filtered_contours", 10);
     thermal_flagged_pub_ = this->create_publisher<sensor_msgs::msg::Image>("/thermal_flagged", 10);
+
+    param_subscriber_ = std::make_shared<rclcpp::ParameterEventHandler>(this);
+    startParamMonitoring(); // Use timer to wait for task_manager to load perception registry
+}
+
+void ThermalWrapper::parameterCallback(const rclcpp::Parameter &param) {
+    is_active_ = param.as_bool();
+    RCLCPP_INFO(this->get_logger(), "Thermal pipeline node active: %s", is_active_ ? "true" : "false");
+}
+
+void ThermalWrapper::startParamMonitoring() {
+    param_monitor_timer_ = this->create_wall_timer(
+        std::chrono::seconds(1),
+        [this]() {
+            static bool callback_registered = false;
+
+            if (!callback_registered) {
+                try {
+                    cb_handle_ = param_subscriber_->add_parameter_callback(
+                        "/task_manager/thermal_pipeline/set_node_active",
+                        std::bind(&ThermalWrapper::parameterCallback, this, std::placeholders::_1),
+                        "task_manager/task_manager"
+                    );
+                    RCLCPP_INFO(this->get_logger(), "✅ Parameter callback registered for task_manager:thermal_pipeline/set_node_active");
+                    callback_registered = true;
+                    param_monitor_timer_->cancel();  // stop retrying
+                } catch (const std::exception &e) {
+                    RCLCPP_WARN(this->get_logger(), "Waiting for task_manager param to become available: %s", e.what());
+                }
+            }
+        });
 }
 
 void ThermalWrapper::thermalImgCallback(
     const sensor_msgs::msg::Image::ConstSharedPtr img,
     const sensor_msgs::msg::CameraInfo::ConstSharedPtr img_info,
     const sensor_msgs::msg::Image::ConstSharedPtr second_img,
-    const sensor_msgs::msg::CameraInfo::ConstSharedPtr second_img_info) {
+    const sensor_msgs::msg::CameraInfo::ConstSharedPtr second_img_info) 
+{
+    if (!is_active_) {
+        return;
+    }
     if (!camera_model_set_) {
         thermal_model_.fromCameraInfo(img_info);
         second_model_.fromCameraInfo(second_img_info);

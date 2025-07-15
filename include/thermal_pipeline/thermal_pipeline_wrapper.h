@@ -69,6 +69,15 @@ class ThermalWrapper : public rclcpp::Node {
     typedef message_filters::Synchronizer<approximate_policy> Synchronizer;
     std::unique_ptr<Synchronizer> sync_;
 
+    // Parameter handling for toggle on/off
+    bool is_active_;
+    std::shared_ptr<rclcpp::ParameterEventHandler> param_subscriber_;
+    std::shared_ptr<rclcpp::ParameterCallbackHandle> cb_handle_;
+    rclcpp::TimerBase::SharedPtr param_monitor_timer_;
+    void parameterCallback(const rclcpp::Parameter &param);
+    void startParamMonitoring();
+    // End parameter handling
+
     void thermalImgCallback(const sensor_msgs::msg::Image::ConstSharedPtr img,
                             const sensor_msgs::msg::CameraInfo::ConstSharedPtr img_info,
                             const sensor_msgs::msg::Image::ConstSharedPtr second_img,
